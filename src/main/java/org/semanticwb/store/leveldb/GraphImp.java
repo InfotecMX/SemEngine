@@ -28,6 +28,7 @@ import org.semanticwb.store.utils.Utils;
  */
 public class GraphImp extends Graph
 {
+    boolean debug=true;
     DB db_bk=null;
     DB db_bs=null;
     DB db_s=null;
@@ -52,6 +53,7 @@ public class GraphImp extends Graph
     public GraphImp(String name, Map params) throws IOException
     {
         super(name, params);
+        if(debug)System.out.println("GraphImp:"+name);
         String path=getParam("path");
         
         //setEncodeURIs(false);
@@ -67,12 +69,16 @@ public class GraphImp extends Graph
         options.createIfMissing(true);
         //options.cacheSize(15 * 1048576); // 10MB cache
         
+        if(debug)System.out.println("Loading 1");
+        
         db_bk = factory.open(new File(path+"/"+name+"_bk"), options);
         db_bs = factory.open(new File(path+"/"+name+"_bs"), options);
         
+        if(debug)System.out.println("Loading 2");
+        
         options = new Options();
         //options.compressionType(CompressionType.NONE);
-        if(false)
+        if(debug)
         {
             System.out.println("blockSize:"+options.blockSize());
             System.out.println("blockRestartInterval:"+options.blockRestartInterval());
@@ -89,17 +95,26 @@ public class GraphImp extends Graph
         options.writeBufferSize(16 * 1048576); //8 megas
         //options.verifyChecksums(false);
         
+        if(debug)System.out.println("Loading 3");
+
+        
         db_s = factory.open(new File(path+"/"+name+"_s"), options);
         db_p = factory.open(new File(path+"/"+name+"_p"), options);
         db_o = factory.open(new File(path+"/"+name+"_o"), options);
         
+        if(debug)System.out.println("Loading 4");
+        
         DBIterator it = db_bk.iterator();
+        int x=0;
         while (it.hasNext())
         {
             Map.Entry<byte[], byte[]> entry = it.next();
             addNameSpace2Cache(factory.asString(entry.getKey()),factory.asString(entry.getValue()));
+            x++;
         }
         it.close();
+        
+        if(debug)System.out.println("bk:"+x);
         
         ti_s=new ThreadIndex(db_s);
         ti_p=new ThreadIndex(db_p);
@@ -113,9 +128,13 @@ public class GraphImp extends Graph
 //        ti_bk.start();
 //        ti_bs.start();
         
+        if(debug)System.out.println("Loading 6");
+        
         ropt.verifyChecksums(false);
         ropt.fillCache(true);
         ropt.snapshot(null);
+        
+        if(debug)System.out.println("End");
     }
     
     @Override
