@@ -71,9 +71,9 @@ public class ConsolidatorTask implements Runnable{
     }
     
     
-    private final Function<FakeTriple, String> bySubject = FakeTriple::getSubject;
-    private final Function<FakeTriple, String> byProperty = FakeTriple::getProperty;
-    private final Function<FakeTriple, String> byObject = FakeTriple::getObject;
+    private final Function<FileTripleExtractor, String> bySubject = FileTripleExtractor::getCurrentSubject;
+    private final Function<FileTripleExtractor, String> byProperty = FileTripleExtractor::getCurrentProperty;
+    private final Function<FileTripleExtractor, String> byObject = FileTripleExtractor::getCurrentObject;
     
     
     public Comparator naturalOrder = Comparator.comparing(bySubject)

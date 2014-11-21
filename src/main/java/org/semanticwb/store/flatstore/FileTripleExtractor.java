@@ -69,4 +69,16 @@ public class FileTripleExtractor {
         }
     }
 
+    public String getCurrentSubject(){
+        return currentTriple.getSubject();
+    }
+    
+    public String getCurrentProperty(){
+        return currentTriple.getProperty();
+    }
+    
+    public String getCurrentObject(){
+        return currentTriple.getObject();
+    }
+    
 }
