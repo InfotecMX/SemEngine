@@ -108,6 +108,7 @@ public class ConsolidatorTask implements Runnable{
                         .putLong(jf.getTripleNumber())
                         .putLong(jf.getPosition())
                         .array();
+                bof.write(bbf);
             }
             bof.close();
         } catch (IOException ioe) {
