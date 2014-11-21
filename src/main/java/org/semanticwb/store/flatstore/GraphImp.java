@@ -1,10 +1,8 @@
 package org.semanticwb.store.flatstore;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -13,8 +11,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import static java.util.stream.Collectors.toList;
-import java.util.stream.IntStream;
 import org.semanticwb.store.Graph;
 import org.semanticwb.store.SObject;
 import org.semanticwb.store.SObjectIterator;
@@ -28,7 +24,7 @@ import org.semanticwb.store.utils.Utils;
  */
 public class GraphImp extends Graph {
     
-    private final int BLOCK_SIZE = 1_000_000;
+    private final int BLOCK_SIZE = 100_000;
     private ConcurrentHashMap<String, String> prefixMaps = new ConcurrentHashMap<>();
     private final File directory;
 
@@ -84,37 +80,22 @@ public class GraphImp extends Graph {
         System.out.println("triples: "+ triples);
         System.out.println("Memoryl: "+Runtime.getRuntime().freeMemory());
         pool.shutdown();
-        while(!pool.awaitTermination(1, TimeUnit.SECONDS));
+        while(!pool.awaitTermination(1, TimeUnit.SECONDS)); //Necesitamos esperar a que los archivos parciales se hayan escrito
         
         
-        compact(count);
+        compact(count, triples);
         
         
     }
     
-    private File getFilename(File directory, String graphName, int part){
+    public static File getFilename(File directory, String graphName, int part){
         String sPart = "00000"+part;
         return new File(directory, graphName+"_"+sPart.substring(sPart.length()-5));
     }
     
-    private void compact(int numberChunks){ System.out.println("chunk: "+ numberChunks);
-        if (1<numberChunks){
-        List<FileTripleExtractor> archivos = IntStream.rangeClosed(1, numberChunks)
-                .mapToObj(index -> 
-                new FileTripleExtractor(getFilename(directory, this.getName(), index)))
-                .collect(toList());
-        archivos.sort(null);}
-        else {
-            FileTripleExtractor fte = new FileTripleExtractor(getFilename(directory, this.getName(), 1));
-            int count = 0;
-            while (fte.getCurrentTriple()!= null){
-                count++;
-                if ((count % 1000)==0)
-                    System.out.println("fte:"+fte.getCurrentTriple().getSubject());
-                fte.consumeCurrentTriple();
-            }
-            fte.close();
-        }
+    private void compact(int numberChunks, long triples) throws FileNotFoundException{ 
+        Runnable compactor = new ConsolidatorTask(numberChunks, getName(), directory, triples);
+        compactor.run();
     }
     
     @Override

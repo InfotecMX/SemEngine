@@ -1,10 +1,10 @@
 package org.semanticwb.store;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 
 /**
  *
@@ -17,6 +17,8 @@ public class FlatStoreFile {
     private final String dataFilename;
     private RandomAccessFile db;
     private final Graph graph;
+    FileChannel rwChannel;
+    ByteBuffer wrBuf;
 
     public static FlatStoreFile create(String name, Graph graph)
             throws IOException {
@@ -42,29 +44,40 @@ public class FlatStoreFile {
         (new File(dataFilename)).delete();
     }
 
-    private void openFiles() throws FileNotFoundException {
+    private void openFiles() throws IOException {
         db = new RandomAccessFile(new File(dataFilename), "rw");
+        rwChannel = db.getChannel();
+        //wrBuf = rwChannel.map(FileChannel.MapMode.READ_WRITE, 0, 1*1024);
     }
 
-    public long add(Triple triple) throws IOException {
+    public void add(Triple triple) throws IOException {
         byte[] sub = graph.encNode(triple.getSubject()).getBytes("utf-8");
         byte[] prop = graph.encNode(triple.getProperty()).getBytes("utf-8");
         byte[] obj = graph.encNode(triple.getObject()).getBytes("utf-8");
-        long lt = sub.length + prop.length + obj.length + 28;
-        byte[] startT = ByteBuffer.allocate(20).putLong(lt).putInt(sub.length)
-                .putInt(prop.length).putInt(obj.length).array();
-        byte[] endT = ByteBuffer.allocate(8).putLong(lt).array();
-        long position = db.length();
-        db.seek(position);
-        db.write(startT, 0, startT.length);
-        db.write(sub, 0, sub.length);
-        db.write(prop, 0, prop.length);
-        db.write(obj, 0, obj.length);
-        db.write(endT, 0, endT.length);
-        return position;
+        int lt = sub.length + prop.length + obj.length + 20;
+        ByteBuffer data = ByteBuffer.allocate(lt).putInt(lt).putInt(sub.length)
+                .putInt(prop.length).putInt(obj.length).put(sub).put(prop)
+                .put(obj).putInt(lt);
+//        byte[] startT = ByteBuffer.allocate(16).putInt(lt).putInt(sub.length)
+//                .putInt(prop.length).putInt(obj.length).array();
+//        byte[] endT = ByteBuffer.allocate(8).putInt(lt).array();
+//        
+//        long position = db.length();
+//        db.seek(position);
+//        db.write(startT, 0, startT.length);
+//        db.write(sub, 0, sub.length);
+//        db.write(prop, 0, prop.length);
+//        db.write(obj, 0, obj.length);
+//        db.write(endT, 0, endT.length);
+//        return position;
+        //wrBuf.put(data);
+        data.rewind();
+        rwChannel.write(data);
     }
     
     public void close() throws IOException {
+        rwChannel.force(true);
+        rwChannel.close();
         db.close();
     }
 

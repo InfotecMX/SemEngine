@@ -17,14 +17,14 @@ import org.semanticwb.store.TripleWrapper;
  * @author serch
  */
 public class WriterTask implements Callable<String>{
-    private File filename;
+    private final File filename;
     final private List<TripleWrapper> list;
     OutputStream out;
     
     
-    Function<TripleWrapper, String> bySubject = TripleWrapper::getSubject;
-    Function<TripleWrapper, String> byProp = TripleWrapper::getProperty;
-    Function<TripleWrapper, String> byObj = TripleWrapper::getObject;
+    private final Function<TripleWrapper, String> bySubject = TripleWrapper::getSubject;
+    private final Function<TripleWrapper, String> byProp = TripleWrapper::getProperty;
+    private final Function<TripleWrapper, String> byObj = TripleWrapper::getObject;
     
     public WriterTask(File filename, List<TripleWrapper> list) {
         this.filename = filename;
