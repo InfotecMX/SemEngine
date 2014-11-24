@@ -2,7 +2,9 @@ package org.semanticwb.store.flatstore;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -80,6 +82,7 @@ public class GraphImp extends Graph {
         
         compact(count, triples);
         
+        savePrefixes();
         
     }
     
@@ -91,6 +94,24 @@ public class GraphImp extends Graph {
     private void compact(int numberChunks, long triples) throws FileNotFoundException{ 
         Runnable compactor = new ConsolidatorTask(numberChunks, getName(), directory, triples);
         compactor.run();
+    }
+    
+    private void savePrefixes() throws IOException{
+        ObjectOutputStream outputFile = new ObjectOutputStream(new FileOutputStream(new File(directory, getName()+".prfx")));
+        System.out.println("prefixes:"+prefixMaps.size());
+        long time = System.currentTimeMillis();
+        prefixMaps.keySet().stream().forEachOrdered(entry -> saveEntry(entry, prefixMaps.get(entry), outputFile));
+        outputFile.close();
+        System.out.println("prefixes time:"+(System.currentTimeMillis()-time));
+    }
+    
+    private void saveEntry(String key, String value, ObjectOutputStream oos){
+        try {
+            oos.writeObject(key);
+            oos.writeObject(value);
+        } catch (IOException ioe) {
+            throw new RuntimeException("Salving prefixes", ioe);
+        }
     }
     
     @Override

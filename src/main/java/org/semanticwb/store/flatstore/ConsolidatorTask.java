@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -20,100 +19,107 @@ import java.util.stream.IntStream;
  *
  * @author serch
  */
-public class ConsolidatorTask implements Runnable{
+public class ConsolidatorTask implements Runnable {
+
     private final int numberChunks;
     private final String name;
     private final File directory;
     private final long triples;
     private final RandomAccessFile dataFile;
-    private final int BLOCK_SIZE=1_000;
+    private final int BLOCK_SIZE = 1_000;
     private final List<JumpFast> idxList = new ArrayList<>();
-    
+    private String previousSubject = null;
+    private long subStartPos = 0;
+    private int subCount = -1;
+
     private long tripleCounter = 0;
-    
 
     public ConsolidatorTask(int numberChunks, String name, File directory, long triples) throws FileNotFoundException {
         this.numberChunks = numberChunks;
         this.name = name;
         this.directory = directory;
         this.triples = triples;
-        this.dataFile = new RandomAccessFile(new File(directory, name+".swbdb"), "rw");
+        this.dataFile = new RandomAccessFile(new File(directory, name + ".swbdb"), "rw");
     }
-    
+
     @Override
     public void run() {
-        if (1<numberChunks){
+        if (1 < numberChunks) {
             long sortTime = System.currentTimeMillis();
             List<FileTripleExtractor> archivos = IntStream.rangeClosed(1, numberChunks)
-                    .mapToObj(index -> 
-                    new FileTripleExtractor(GraphImp.getFilename(directory, name, index)))
+                    .mapToObj(index
+                            -> new FileTripleExtractor(GraphImp.getFilename(directory, name, index)))
                     .collect(toList());
-            processJDK(archivos);
-//            processInternal(archivos.toArray(new FileTripleExtractor[0]));
-            System.out.println("Consolidation: "+(System.currentTimeMillis() - sortTime));
-        }
-        else {
+//            processJDK(archivos);
+            processInternal(archivos.toArray(new FileTripleExtractor[0]));
+            System.out.println("Consolidation: " + (System.currentTimeMillis() - sortTime));
+        } else {
             FileTripleExtractor fte = new FileTripleExtractor(GraphImp.getFilename(directory, name, 1));
             int count = 0;
-            while (fte.getCurrentTriple()!= null){
+            while (fte.getCurrentTriple() != null) {
                 count++;
-                if ((count % 1000)==0)
-                    System.out.println("fte:"+fte.getCurrentTriple().getSubject());
+                if ((count % 1000) == 0) {
+                    System.out.println("fte:" + fte.getCurrentTriple().getSubject());
+                }
                 fte.consumeCurrentTriple();
             }
             fte.close();
         }
         saveIdx();
     }
-    
-    private void processJDK(List<FileTripleExtractor> archivos){
-        for(int i =0; i<triples; i++){
-                archivos.sort(naturalOrder);
-                FakeTriple ft = archivos.get(0).getCurrentTriple();
-                save(ft);
-                if (!archivos.get(0).consumeCurrentTriple()){
-                    archivos.get(0).close();
-                    archivos.get(0).delete();
-                    archivos.remove(0);
-                }
+
+    private void processJDK(List<FileTripleExtractor> archivos) {
+        for (int i = 0; i < triples; i++) {
+            archivos.sort(naturalOrder);
+            FakeTriple ft = archivos.get(0).getCurrentTriple();
+            save(ft);
+            if (!archivos.get(0).consumeCurrentTriple()) {
+                archivos.get(0).close();
+                archivos.get(0).delete();
+                archivos.remove(0);
             }
+        }
     }
-    
-    private void processInternal(FileTripleExtractor[] archivos){
+
+    private void processInternal(FileTripleExtractor[] archivos) {
         FileTripleExtractor[] listaDatos = archivos;
         Arrays.sort(archivos, naturalOrder);
-        for(int i =0; i<triples; i++){
-                internalSorter(naturalOrder, listaDatos);
-                FakeTriple ft = listaDatos[0].getCurrentTriple();
-                save(ft);
-                if (!listaDatos[0].consumeCurrentTriple()){
-                    listaDatos[0].close();
-                    listaDatos[0].delete();
-                    listaDatos = Arrays.copyOfRange(listaDatos, 1, listaDatos.length);
-                }
+        previousSubject = archivos[0].getCurrentSubject();
+        for (int i = 0; i < triples; i++) {
+            internalSorter(naturalOrder, listaDatos);
+            FakeTriple ft = listaDatos[0].getCurrentTriple();
+            save(ft);
+            if (!listaDatos[0].consumeCurrentTriple()) {
+                listaDatos[0].close();
+                listaDatos[0].delete();
+                listaDatos = Arrays.copyOfRange(listaDatos, 1, listaDatos.length);
             }
+        }
     }
-    
+
     private void internalSorter(Comparator naturalOrder, FileTripleExtractor[] archivos) {
-        if (archivos.length < 1) return; //si sólo hay un elemento, ya está ordenado
+        if (archivos.length < 1) {
+            return; //si sólo hay un elemento, ya está ordenado
+        }
         int currElePos = 0;
         int comparingTo = 1;
-        while (currElePos < archivos.length - 1){
-            if (naturalOrder.compare(archivos[currElePos], archivos[comparingTo])>0){
+        while (currElePos < archivos.length - 1) {
+            if (naturalOrder.compare(archivos[currElePos], archivos[comparingTo]) > 0) {
                 FileTripleExtractor aux = archivos[currElePos];
                 archivos[currElePos] = archivos[comparingTo];
                 archivos[comparingTo] = aux;
                 currElePos++;
                 comparingTo++;
-            } else break;
+            } else {
+                break;
+            }
         }
     }
-    
+
     private final Function<FileTripleExtractor, String> bySubject = FileTripleExtractor::getCurrentSubject;
     private final Function<FileTripleExtractor, String> byProperty = FileTripleExtractor::getCurrentProperty;
     private final Function<FileTripleExtractor, String> byObject = FileTripleExtractor::getCurrentObject;
-    
-    
+
     public Comparator naturalOrder = Comparator.comparing(bySubject)
             .thenComparing(byProperty)
             .thenComparing(byObject);
@@ -131,20 +137,23 @@ public class ConsolidatorTask implements Runnable{
 
     private void save(FakeTriple ft) {
         long triplePosition = (saveTriple(ft));
-        if ((++tripleCounter) % BLOCK_SIZE == 0){
-            idxList.add(new JumpFast(tripleCounter, triplePosition));
+        subCount++;
+        if (!ft.getSubject().equals(previousSubject)) {
+            idxList.add(new JumpFast(subStartPos, subCount));
+            previousSubject = ft.getSubject();
+            subCount = 0;
+            subStartPos = triplePosition;
         }
-        
     }
 
     private void saveIdx() {
         try {
             BufferedOutputStream bof = new BufferedOutputStream(
-                    new FileOutputStream(new File(directory,name+".idx")));
-            for (JumpFast jf : idxList){
-                byte[] bbf = ByteBuffer.allocate(16)
-                        .putLong(jf.getTripleNumber())
+                    new FileOutputStream(new File(directory, name + ".idx")));
+            for (JumpFast jf : idxList) {
+                byte[] bbf = ByteBuffer.allocate(12)
                         .putLong(jf.getPosition())
+                        .putInt(jf.getnumSubjects())
                         .array();
                 bof.write(bbf);
             }
@@ -154,24 +163,24 @@ public class ConsolidatorTask implements Runnable{
         }
     }
 
-    
 }
 
 class JumpFast {
-    private final long tripleNumber;
-    private final long position;
 
-    public JumpFast(long tripleNumber, long position) {
-        this.tripleNumber = tripleNumber;
+    private final long position;
+    private final int numSubjects;
+
+    public JumpFast(long position, int numSubjects) {
+        this.numSubjects = numSubjects;
         this.position = position;
     }
 
-    public long getTripleNumber() {
-        return tripleNumber;
+    public int getnumSubjects() {
+        return numSubjects;
     }
 
     public long getPosition() {
         return position;
     }
-   
+
 }
