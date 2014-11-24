@@ -41,11 +41,13 @@ public class WriterTask implements Callable<String>{
     
     @Override
     public String call() throws IOException {
+        long time = System.currentTimeMillis();
         open();
         list.stream()
             .sorted(comparing(bySubject).thenComparing(byProp).thenComparing(byObj))
             .forEachOrdered(this::writeToFile);
         close();
+        System.out.println("time to write "+ filename + ": "+(System.currentTimeMillis()-time));
         return filename.getName();
     }
     

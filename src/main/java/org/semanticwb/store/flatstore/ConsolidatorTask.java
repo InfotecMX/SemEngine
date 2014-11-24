@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
@@ -42,19 +43,14 @@ public class ConsolidatorTask implements Runnable{
     @Override
     public void run() {
         if (1<numberChunks){
+            long sortTime = System.currentTimeMillis();
             List<FileTripleExtractor> archivos = IntStream.rangeClosed(1, numberChunks)
                     .mapToObj(index -> 
                     new FileTripleExtractor(GraphImp.getFilename(directory, name, index)))
                     .collect(toList());
-            for(int i =0; i<triples; i++){
-                archivos.sort(naturalOrder);
-                FakeTriple ft = archivos.get(0).getCurrentTriple();
-                save(ft);
-                if (!archivos.get(0).consumeCurrentTriple()){
-                    archivos.get(0).close();
-                    archivos.remove(0);
-                }
-            }
+            processJDK(archivos);
+//            processInternal(archivos.toArray(new FileTripleExtractor[0]));
+            System.out.println("Consolidation: "+(System.currentTimeMillis() - sortTime));
         }
         else {
             FileTripleExtractor fte = new FileTripleExtractor(GraphImp.getFilename(directory, name, 1));
@@ -70,6 +66,48 @@ public class ConsolidatorTask implements Runnable{
         saveIdx();
     }
     
+    private void processJDK(List<FileTripleExtractor> archivos){
+        for(int i =0; i<triples; i++){
+                archivos.sort(naturalOrder);
+                FakeTriple ft = archivos.get(0).getCurrentTriple();
+                save(ft);
+                if (!archivos.get(0).consumeCurrentTriple()){
+                    archivos.get(0).close();
+                    archivos.get(0).delete();
+                    archivos.remove(0);
+                }
+            }
+    }
+    
+    private void processInternal(FileTripleExtractor[] archivos){
+        FileTripleExtractor[] listaDatos = archivos;
+        Arrays.sort(archivos, naturalOrder);
+        for(int i =0; i<triples; i++){
+                internalSorter(naturalOrder, listaDatos);
+                FakeTriple ft = listaDatos[0].getCurrentTriple();
+                save(ft);
+                if (!listaDatos[0].consumeCurrentTriple()){
+                    listaDatos[0].close();
+                    listaDatos[0].delete();
+                    listaDatos = Arrays.copyOfRange(listaDatos, 1, listaDatos.length);
+                }
+            }
+    }
+    
+    private void internalSorter(Comparator naturalOrder, FileTripleExtractor[] archivos) {
+        if (archivos.length < 1) return; //si sólo hay un elemento, ya está ordenado
+        int currElePos = 0;
+        int comparingTo = 1;
+        while (currElePos < archivos.length - 1){
+            if (naturalOrder.compare(archivos[currElePos], archivos[comparingTo])>0){
+                FileTripleExtractor aux = archivos[currElePos];
+                archivos[currElePos] = archivos[comparingTo];
+                archivos[comparingTo] = aux;
+                currElePos++;
+                comparingTo++;
+            } else break;
+        }
+    }
     
     private final Function<FileTripleExtractor, String> bySubject = FileTripleExtractor::getCurrentSubject;
     private final Function<FileTripleExtractor, String> byProperty = FileTripleExtractor::getCurrentProperty;
@@ -115,7 +153,7 @@ public class ConsolidatorTask implements Runnable{
             throw new RuntimeException("Writing idx file", ioe);
         }
     }
-    
+
     
 }
 

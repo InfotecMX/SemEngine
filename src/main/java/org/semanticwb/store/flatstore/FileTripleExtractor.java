@@ -15,19 +15,21 @@ import java.util.Iterator;
 public class FileTripleExtractor {
 
     private final InputStream inFile;
+    private final File filename;
     private Iterator<FakeTriple> localIt;
     private long position = 0;
     private FakeTriple currentTriple = null;
 
     public FileTripleExtractor(File filename) {
+        this.filename = filename;
         try {
-            inFile = new BufferedInputStream(new FileInputStream(filename));
+            inFile = new BufferedInputStream(new FileInputStream(this.filename));
             if (!inFile.markSupported()) {
                 throw new IOException("mark is not supported...");
             }
             currentTriple = getNextTripleOnFile();
         } catch (IOException ioe) {
-            throw new RuntimeException("Opening File for reading:" + filename, ioe);
+            throw new RuntimeException("Opening File for reading:" + this.filename, ioe);
         }
     }
 
@@ -79,6 +81,10 @@ public class FileTripleExtractor {
     
     public String getCurrentObject(){
         return currentTriple.getObject();
+    }
+
+    public boolean delete() {
+        return filename.delete();
     }
     
 }

@@ -24,7 +24,7 @@ import org.semanticwb.store.utils.Utils;
  */
 public class GraphImp extends Graph {
     
-    private final int BLOCK_SIZE = 100_000;
+    private final int BLOCK_SIZE = 500_000;
     private ConcurrentHashMap<String, String> prefixMaps = new ConcurrentHashMap<>();
     private final File directory;
 
@@ -56,7 +56,6 @@ public class GraphImp extends Graph {
     }
     
     public void createFromNT(String ntFileName) throws IOException, InterruptedException{
-        System.out.println("Memoryi: "+Runtime.getRuntime().freeMemory());
         ExecutorService pool = Executors.newFixedThreadPool(4);
         Iterator<Triple> it = read2(ntFileName, 0, 0);
         int count = 0;
@@ -68,20 +67,16 @@ public class GraphImp extends Graph {
             if (BLOCK_SIZE == lista.size()){
                 pool.submit(new WriterTask(getFilename(directory, this.getName(), ++count), lista));
                 lista = new ArrayList<>((int)(BLOCK_SIZE * 1.2));
-                System.out.println("Memory: "+Runtime.getRuntime().freeMemory());
             }
         }
         if (lista.size()>0){
             pool.submit(new WriterTask(getFilename(directory, this.getName(), ++count), lista));
         }
-        
-        System.out.println("Memoryt: "+Runtime.getRuntime().freeMemory());
-        System.out.println("Carga: "+ (System.currentTimeMillis() - lecturaStart));
+        System.out.println("Lectura y envío de trabajos: "+ (System.currentTimeMillis() - lecturaStart));
         System.out.println("triples: "+ triples);
-        System.out.println("Memoryl: "+Runtime.getRuntime().freeMemory());
         pool.shutdown();
         while(!pool.awaitTermination(1, TimeUnit.SECONDS)); //Necesitamos esperar a que los archivos parciales se hayan escrito
-        
+        System.out.println("Escritura paso 1: "+ (System.currentTimeMillis() - lecturaStart));
         
         compact(count, triples);
         

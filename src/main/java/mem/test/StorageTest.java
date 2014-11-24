@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import org.semanticwb.store.Graph;
-import org.semanticwb.store.flatstore.FileTripleExtractor;
 import org.semanticwb.store.flatstore.GraphImp;
 
 /**
@@ -29,7 +28,7 @@ public class StorageTest {
         params.put("path", "./demo");
         Graph tGraph = new GraphImp("HomePages", params);
         long time = System.currentTimeMillis();
-        ((GraphImp)tGraph).createFromNT("/Data/FlatStoreDemoFiles/homepages-fixed.nt.gz");
+        ((GraphImp)tGraph).createFromNT("/Data/FlatStoreDemoFiles/infoboxes-fixed.nt.gz");
         System.out.println("time: "+(System.currentTimeMillis()-time));
         
         
