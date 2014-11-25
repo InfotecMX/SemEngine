@@ -78,9 +78,9 @@ public class GraphImp extends Graph {
             works++;
             if (BLOCK_SIZE == lista.size()) {
                 pool.submit(new WriterTask(getFilename(directory, this.getName(), ++count).getCanonicalPath(), lista));
-                if (works % 4 == 0) {
-                    Thread.sleep(2500);
-                }
+//                if (works % 6 == 0) {
+                    Thread.sleep(1000);
+//                }
                 lista = new ArrayList<>((int) (BLOCK_SIZE * 1.2));
 
             }
@@ -90,8 +90,9 @@ public class GraphImp extends Graph {
         }
         System.out.println("Lectura y envío de trabajos: " + (System.currentTimeMillis() - lecturaStart));
         System.out.println("triples: " + triples);
+        Thread.sleep(1000);
         pool.shutdown();
-        while (!pool.awaitTermination(1, TimeUnit.SECONDS)); //Necesitamos esperar a que los archivos parciales se hayan escrito
+        while (!pool.awaitTermination(1, TimeUnit.SECONDS)) System.out.println("Waiting...");; //Necesitamos esperar a que los archivos parciales se hayan escrito
         System.out.println("Escritura paso 1: " + (System.currentTimeMillis() - lecturaStart));
 
         compact(count, triples);

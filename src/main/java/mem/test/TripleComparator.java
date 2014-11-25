@@ -36,8 +36,20 @@ public class TripleComparator {
         ftp2.close();
     }
 
-    public static void main(String[] args) {
+    public static void main3(String[] args) {
         FileTripleExtractor ftp1 = new FileTripleExtractor("/Users/serch/Proyects/gitRepos/SemEngine/demo/HomePages.swbdb");
+        long count = 0;
+        for (int x = 0; x < 200; x++) {
+            count++;
+            System.out.println("Triple: " + count);
+            System.out.println("1: " + ftp1.getCurrentSubject() + " | " + ftp1.getCurrentProperty() + " | " + ftp1.getCurrentObject());
+            ftp1.consumeCurrentTriple();
+        }
+        ftp1.close();
+    }
+    
+    public static void main(String[] args) {
+        FileTripleExtractor ftp1 = new FileTripleExtractor("/Users/serch/Proyects/gitRepos/SemEngine/demo/HomePages-obj.swbdb");
         long count = 0;
         for (int x = 0; x < 200; x++) {
             count++;
