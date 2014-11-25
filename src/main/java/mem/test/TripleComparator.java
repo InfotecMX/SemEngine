@@ -19,8 +19,8 @@ public class TripleComparator {
      * @param args the command line arguments
      */
     public static void main2(String[] args) {
-        FileTripleExtractor ftp1 = new FileTripleExtractor(new File("/Users/serch/Proyects/gitRepos/SemEngine/demo/HomePages.swbdb"));
-        FileTripleExtractor ftp2 = new FileTripleExtractor(new File("/Users/serch/Proyects/gitRepos/SemEngine/demo1/HomePages.swbdb"));
+        FileTripleExtractor ftp1 = new FileTripleExtractor("/Users/serch/Proyects/gitRepos/SemEngine/demo/HomePages.swbdb");
+        FileTripleExtractor ftp2 = new FileTripleExtractor("/Users/serch/Proyects/gitRepos/SemEngine/demo1/HomePages.swbdb");
         long count = 0;
         while (ftp1.getCurrentTriple() != null) {
             count++;
@@ -37,7 +37,7 @@ public class TripleComparator {
     }
 
     public static void main(String[] args) {
-        FileTripleExtractor ftp1 = new FileTripleExtractor(new File("/Users/serch/Proyects/gitRepos/SemEngine/demo/HomePages.swbdb"));
+        FileTripleExtractor ftp1 = new FileTripleExtractor("/Users/serch/Proyects/gitRepos/SemEngine/demo/HomePages.swbdb");
         long count = 0;
         for (int x = 0; x < 200; x++) {
             count++;

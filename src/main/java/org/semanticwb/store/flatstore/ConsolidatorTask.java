@@ -26,51 +26,62 @@ public class ConsolidatorTask implements Runnable {
     private final File directory;
     private final long triples;
     private final RandomAccessFile dataFile;
-    private final int BLOCK_SIZE = 1_000;
     private final List<JumpFast> idxList = new ArrayList<>();
     private String previousSubject = null;
     private long subStartPos = 0;
     private int subCount = -1;
+    private final int idx;
 
     private long tripleCounter = 0;
 
-    public ConsolidatorTask(int numberChunks, String name, File directory, long triples) throws FileNotFoundException {
+    public ConsolidatorTask(int numberChunks, String name, File directory,
+            long triples, int idx) throws FileNotFoundException {
         this.numberChunks = numberChunks;
+        this.idx = idx;
         this.name = name;
         this.directory = directory;
         this.triples = triples;
-        this.dataFile = new RandomAccessFile(new File(directory, name + ".swbdb"), "rw");
+        this.dataFile = new RandomAccessFile(new File(directory, name + getSufix() +  ".swbdb"), "rw");
     }
 
     @Override
     public void run() {
-        if (1 < numberChunks) {
+//        if (1 < numberChunks) {
             long sortTime = System.currentTimeMillis();
             List<FileTripleExtractor> archivos = IntStream.rangeClosed(1, numberChunks)
                     .mapToObj(index
-                            -> new FileTripleExtractor(GraphImp.getFilename(directory, name, index)))
+                            -> new FileTripleExtractor(getFilename(index)))
                     .collect(toList());
 //            processJDK(archivos);
             processInternal(archivos.toArray(new FileTripleExtractor[0]));
             System.out.println("Consolidation: " + (System.currentTimeMillis() - sortTime));
-        } else {
-            FileTripleExtractor fte = new FileTripleExtractor(GraphImp.getFilename(directory, name, 1));
-            int count = 0;
-            while (fte.getCurrentTriple() != null) {
-                count++;
-                if ((count % 1000) == 0) {
-                    System.out.println("fte:" + fte.getCurrentTriple().getSubject());
-                }
-                fte.consumeCurrentTriple();
-            }
-            fte.close();
-        }
+//        } else {
+//            FileTripleExtractor fte = new FileTripleExtractor(GraphImp.getFilename(directory, name, 1));
+//            int count = 0;
+//            while (fte.getCurrentTriple() != null) {
+//                count++;
+//                if ((count % 1000) == 0) {
+//                    System.out.println("fte:" + fte.getCurrentTriple().getSubject());
+//                }
+//                fte.consumeCurrentTriple();
+//            }
+//            fte.close();
+//        }
         saveIdx();
+    }
+    
+    private String getFilename(int index){
+        try {
+            return GraphImp.getFilename(directory, name, index).getCanonicalPath()+getSufix();
+        } catch (IOException ioe) {
+            throw new RuntimeException("Converting filename ", ioe);
+        }
     }
 
     private void processJDK(List<FileTripleExtractor> archivos) {
+        Comparator cmp = getComparator();
         for (int i = 0; i < triples; i++) {
-            archivos.sort(naturalOrder);
+            archivos.sort(cmp);
             FakeTriple ft = archivos.get(0).getCurrentTriple();
             save(ft);
             if (!archivos.get(0).consumeCurrentTriple()) {
@@ -82,11 +93,12 @@ public class ConsolidatorTask implements Runnable {
     }
 
     private void processInternal(FileTripleExtractor[] archivos) {
+        Comparator cmp = getComparator();
         FileTripleExtractor[] listaDatos = archivos;
-        Arrays.sort(archivos, naturalOrder);
+        Arrays.sort(archivos, cmp);
         previousSubject = archivos[0].getCurrentSubject();
         for (int i = 0; i < triples; i++) {
-            internalSorter(naturalOrder, listaDatos);
+            internalSorter(cmp, listaDatos);
             FakeTriple ft = listaDatos[0].getCurrentTriple();
             save(ft);
             if (!listaDatos[0].consumeCurrentTriple()) {
@@ -94,6 +106,24 @@ public class ConsolidatorTask implements Runnable {
                 listaDatos[0].delete();
                 listaDatos = Arrays.copyOfRange(listaDatos, 1, listaDatos.length);
             }
+        }
+    }
+    
+    private Comparator getComparator(){
+        switch(idx){
+            case 0: return subjectOrder;
+            case 1: return propertyOrder;
+            case 2: return objectOrder;
+            default: return null;  
+        }
+    }
+    
+    private String getSufix(){
+        switch(idx){
+            case 0: return "-sub";
+            case 1: return "-pro";
+            case 2: return "-obj";
+            default: return null;  
         }
     }
 
@@ -120,9 +150,15 @@ public class ConsolidatorTask implements Runnable {
     private final Function<FileTripleExtractor, String> byProperty = FileTripleExtractor::getCurrentProperty;
     private final Function<FileTripleExtractor, String> byObject = FileTripleExtractor::getCurrentObject;
 
-    public Comparator naturalOrder = Comparator.comparing(bySubject)
+    public Comparator subjectOrder = Comparator.comparing(bySubject)
             .thenComparing(byProperty)
             .thenComparing(byObject);
+    public Comparator propertyOrder = Comparator.comparing(byProperty)
+            .thenComparing(byObject)
+            .thenComparing(bySubject);
+    public Comparator objectOrder = Comparator.comparing(byObject)
+            .thenComparing(bySubject)
+            .thenComparing(byProperty);
 
     private long saveTriple(FakeTriple ft) {
         try {
@@ -149,7 +185,7 @@ public class ConsolidatorTask implements Runnable {
     private void saveIdx() {
         try {
             BufferedOutputStream bof = new BufferedOutputStream(
-                    new FileOutputStream(new File(directory, name + ".idx")));
+                    new FileOutputStream(new File(directory, name +getSufix()+ ".idx")));
             for (JumpFast jf : idxList) {
                 byte[] bbf = ByteBuffer.allocate(12)
                         .putLong(jf.getPosition())

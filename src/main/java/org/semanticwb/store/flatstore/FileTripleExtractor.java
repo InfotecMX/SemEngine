@@ -15,12 +15,12 @@ import java.util.Iterator;
 public class FileTripleExtractor {
 
     private final InputStream inFile;
-    private final File filename;
+    private final String filename;
     private Iterator<FakeTriple> localIt;
     private long position = 0;
     private FakeTriple currentTriple = null;
 
-    public FileTripleExtractor(File filename) {
+    public FileTripleExtractor(String filename) {
         this.filename = filename;
         try {
             inFile = new BufferedInputStream(new FileInputStream(this.filename));
@@ -84,7 +84,7 @@ public class FileTripleExtractor {
     }
 
     public boolean delete() {
-        return filename.delete();
+        return new File(filename).delete();
     }
     
 }

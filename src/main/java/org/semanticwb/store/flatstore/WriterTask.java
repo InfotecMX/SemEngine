@@ -8,7 +8,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.Callable;
-import static java.util.Comparator.*;
+import java.util.Comparator;
 import java.util.function.Function;
 import org.semanticwb.store.TripleWrapper;
 
@@ -17,22 +17,35 @@ import org.semanticwb.store.TripleWrapper;
  * @author serch
  */
 public class WriterTask implements Callable<String>{
-    private final File filename;
+    private final String baseFilename;
     final private List<TripleWrapper> list;
-    OutputStream out;
+    private OutputStream out;
     
     
     private final Function<TripleWrapper, String> bySubject = TripleWrapper::getSubject;
     private final Function<TripleWrapper, String> byProp = TripleWrapper::getProperty;
     private final Function<TripleWrapper, String> byObj = TripleWrapper::getObject;
     
-    public WriterTask(File filename, List<TripleWrapper> list) {
-        this.filename = filename;
+    private Comparator<TripleWrapper> subjectOrder = 
+            Comparator.comparing(bySubject)
+                    .thenComparing(byProp)
+                    .thenComparing(byObj);
+    private Comparator<TripleWrapper> propertyOrder = 
+            Comparator.comparing(byProp)
+                    .thenComparing(byObj)
+                    .thenComparing(bySubject);
+    private Comparator<TripleWrapper> objectOrder = 
+            Comparator.comparing(byObj)
+                    .thenComparing(bySubject)
+                    .thenComparing(byProp);
+    
+    public WriterTask(String baseFilename, List<TripleWrapper> list) {
+        this.baseFilename = baseFilename;
         this.list = list;
     }
     
-    public void open() throws IOException {
-        out = new BufferedOutputStream(new FileOutputStream(filename));
+    public void open(String type) throws IOException {
+        out = new BufferedOutputStream(new FileOutputStream(baseFilename+type));
     }
     
     public void close() throws IOException {
@@ -42,13 +55,23 @@ public class WriterTask implements Callable<String>{
     @Override
     public String call() throws IOException {
         long time = System.currentTimeMillis();
-        open();
+        open("-sub");
         list.stream()
-            .sorted(comparing(bySubject).thenComparing(byProp).thenComparing(byObj))
+            .sorted(subjectOrder)
             .forEachOrdered(this::writeToFile);
         close();
-        System.out.println("time to write "+ filename + ": "+(System.currentTimeMillis()-time));
-        return filename.getName();
+        open("-pro");
+        list.stream()
+            .sorted(propertyOrder)
+            .forEachOrdered(this::writeToFile);
+        close();
+        open("-obj");
+        list.stream()
+            .sorted(objectOrder)
+            .forEachOrdered(this::writeToFile);
+        close();
+        System.out.println("time to write "+ baseFilename + "family : "+(System.currentTimeMillis()-time));
+        return "Wrote "+baseFilename+" family";
     }
     
     private void writeToFile(TripleWrapper triple) {

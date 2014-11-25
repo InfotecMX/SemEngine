@@ -25,21 +25,27 @@ import org.semanticwb.store.utils.Utils;
  * @author serch
  */
 public class GraphImp extends Graph {
-    
+
     private final int BLOCK_SIZE = 500_000;
     private ConcurrentHashMap<String, String> prefixMaps = new ConcurrentHashMap<>();
     private final File directory;
 
     public GraphImp(String name, Map<String, String> params) {
         super(name, params);
-        String path=getParam("path");
-        if (null==path) throw new IllegalArgumentException("Param path is missing in params map");
+        String path = getParam("path");
+        if (null == path) {
+            throw new IllegalArgumentException("Param path is missing in params map");
+        }
         File dir = new File(path);
         if (dir.exists()) {
-            if (!dir.isDirectory()) throw new IllegalArgumentException("path supplied points to an actual file");
-            else openBase(dir);
-        } else
+            if (!dir.isDirectory()) {
+                throw new IllegalArgumentException("path supplied points to an actual file");
+            } else {
+                openBase(dir);
+            }
+        } else {
             dir.mkdirs();
+        }
         directory = dir;
     }
 
@@ -47,65 +53,77 @@ public class GraphImp extends Graph {
     public String addNameSpace(String prefix, String ns) {
         String localPrefix = null;
         if (null == prefix) {
-            localPrefix=Utils.encodeLong(prefixMaps.size());
+            localPrefix = Utils.encodeLong(prefixMaps.size());
         } else {
-            if (!prefixMaps.containsKey(prefix))
-            localPrefix = prefix;
+            if (!prefixMaps.containsKey(prefix)) {
+                localPrefix = prefix;
+            }
         }
-        addNameSpace2Cache(localPrefix,ns);
+        addNameSpace2Cache(localPrefix, ns);
         prefixMaps.put(localPrefix, ns);
         return localPrefix;
     }
-    
-    public void createFromNT(String ntFileName) throws IOException, InterruptedException{
+
+    public void createFromNT(String ntFileName) throws IOException, InterruptedException {
         ExecutorService pool = Executors.newFixedThreadPool(4);
         Iterator<Triple> it = read2(ntFileName, 0, 0);
         int count = 0;
         long triples = 0;
-        List<TripleWrapper> lista = new ArrayList<>((int)(BLOCK_SIZE * 1.2));
+        int works = 0;
+        List<TripleWrapper> lista = new ArrayList<>((int) (BLOCK_SIZE * 1.2));
         long lecturaStart = System.currentTimeMillis();
-        while(it.hasNext()){
-            lista.add(new TripleWrapper(it.next(),this)); triples++;
-            if (BLOCK_SIZE == lista.size()){
-                pool.submit(new WriterTask(getFilename(directory, this.getName(), ++count), lista));
-                lista = new ArrayList<>((int)(BLOCK_SIZE * 1.2));
+        while (it.hasNext()) {
+            lista.add(new TripleWrapper(it.next(), this));
+            triples++;
+            works++;
+            if (BLOCK_SIZE == lista.size()) {
+                pool.submit(new WriterTask(getFilename(directory, this.getName(), ++count).getCanonicalPath(), lista));
+                if (works % 4 == 0) {
+                    Thread.sleep(2500);
+                }
+                lista = new ArrayList<>((int) (BLOCK_SIZE * 1.2));
+
             }
         }
-        if (lista.size()>0){
-            pool.submit(new WriterTask(getFilename(directory, this.getName(), ++count), lista));
+        if (lista.size() > 0) {
+            pool.submit(new WriterTask(getFilename(directory, this.getName(), ++count).getCanonicalPath(), lista));
         }
-        System.out.println("Lectura y envío de trabajos: "+ (System.currentTimeMillis() - lecturaStart));
-        System.out.println("triples: "+ triples);
+        System.out.println("Lectura y envío de trabajos: " + (System.currentTimeMillis() - lecturaStart));
+        System.out.println("triples: " + triples);
         pool.shutdown();
-        while(!pool.awaitTermination(1, TimeUnit.SECONDS)); //Necesitamos esperar a que los archivos parciales se hayan escrito
-        System.out.println("Escritura paso 1: "+ (System.currentTimeMillis() - lecturaStart));
-        
+        while (!pool.awaitTermination(1, TimeUnit.SECONDS)); //Necesitamos esperar a que los archivos parciales se hayan escrito
+        System.out.println("Escritura paso 1: " + (System.currentTimeMillis() - lecturaStart));
+
         compact(count, triples);
-        
+
         savePrefixes();
-        
+
     }
-    
-    public static File getFilename(File directory, String graphName, int part){
-        String sPart = "00000"+part;
-        return new File(directory, graphName+"_"+sPart.substring(sPart.length()-5));
+
+    public static File getFilename(File directory, String graphName, int part) {
+        String sPart = "00000" + part;
+        return new File(directory, graphName + "_" + sPart.substring(sPart.length() - 5));
     }
-    
-    private void compact(int numberChunks, long triples) throws FileNotFoundException{ 
-        Runnable compactor = new ConsolidatorTask(numberChunks, getName(), directory, triples);
-        compactor.run();
+
+    private void compact(int numberChunks, long triples) throws FileNotFoundException {
+        Thread compactor = new Thread(new ConsolidatorTask(numberChunks, getName(), directory, triples, 0));
+        compactor.start();
+        compactor = new Thread(new ConsolidatorTask(numberChunks, getName(), directory, triples, 1));
+        compactor.start();
+        compactor = new Thread(new ConsolidatorTask(numberChunks, getName(), directory, triples, 2));
+        compactor.start();
     }
-    
-    private void savePrefixes() throws IOException{
-        ObjectOutputStream outputFile = new ObjectOutputStream(new FileOutputStream(new File(directory, getName()+".prfx")));
-        System.out.println("prefixes:"+prefixMaps.size());
+
+    private void savePrefixes() throws IOException {
+        ObjectOutputStream outputFile = new ObjectOutputStream(new FileOutputStream(new File(directory, getName() + ".prfx")));
+        System.out.println("prefixes:" + prefixMaps.size());
         long time = System.currentTimeMillis();
         prefixMaps.keySet().stream().forEachOrdered(entry -> saveEntry(entry, prefixMaps.get(entry), outputFile));
         outputFile.close();
-        System.out.println("prefixes time:"+(System.currentTimeMillis()-time));
+        System.out.println("prefixes time:" + (System.currentTimeMillis() - time));
     }
-    
-    private void saveEntry(String key, String value, ObjectOutputStream oos){
+
+    private void saveEntry(String key, String value, ObjectOutputStream oos) {
         try {
             oos.writeObject(key);
             oos.writeObject(value);
@@ -113,7 +131,7 @@ public class GraphImp extends Graph {
             throw new RuntimeException("Salving prefixes", ioe);
         }
     }
-    
+
     @Override
     public boolean addTriple(Triple triple, boolean thread) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
@@ -123,8 +141,6 @@ public class GraphImp extends Graph {
     public boolean addTriple(Triple triple) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
-    
-    
 
     @Override
     public void begin() {
@@ -184,5 +200,5 @@ public class GraphImp extends Graph {
     private void openBase(File dir) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
-    
+
 }
