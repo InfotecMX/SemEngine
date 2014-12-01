@@ -215,7 +215,6 @@ public class ConsolidatorTask implements Runnable {
 //        try {
         long triplePosition = (saveTriple(ft));
         count++;
-        idxList.add(new JumpFast(startPos, count));
 //        if (null == getValue(ft) ){
 //            System.out.println("FOUND Object with null --------> "+ idx + " ->" + getValue(ft));
 //            System.out.println(" prev: "+ previous);
@@ -225,6 +224,7 @@ public class ConsolidatorTask implements Runnable {
 //            System.out.println("");
 //        }
         if (!getValue(ft).equals(previous)) {
+            idxList.add(new JumpFast(startPos, count));
             previous = getValue(ft);
             count = 0;
             startPos = triplePosition;

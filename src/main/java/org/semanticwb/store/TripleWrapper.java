@@ -5,6 +5,8 @@
  */
 package org.semanticwb.store;
 
+import java.nio.ByteBuffer;
+
 /**
  *
  * @author serch
@@ -34,6 +36,17 @@ public class TripleWrapper {
     public String getObject() {
         if (null == object) object = graph.encNode(triple.getObject());
         return object;
+    }
+    
+    public static Triple getTripleFromData(Graph graph, byte[] data){
+        ByteBuffer bb = ByteBuffer.wrap(data);
+        int iSub = bb.getInt(4);
+        int iProp = bb.getInt(8);
+        int iObj = bb.getInt(12);
+        return new Triple(
+                graph.decNode(new String(data, 16, iSub)), 
+                graph.decNode(new String(data, 16 + iSub, iProp)), 
+                graph.decNode(new String(data, 16 + iSub + iProp, iObj)));
     }
     
 }

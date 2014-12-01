@@ -6,8 +6,16 @@
 package mem.test;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import org.semanticwb.store.Graph;
+import org.semanticwb.store.Triple;
 import org.semanticwb.store.flatstore.FakeTriple;
 import org.semanticwb.store.flatstore.FileTripleExtractor;
+import org.semanticwb.store.flatstore.GraphImp;
+import org.semanticwb.store.flatstore.TripleFileReader;
 
 /**
  *
@@ -48,7 +56,7 @@ public class TripleComparator {
         ftp1.close();
     }
     
-    public static void main(String[] args) {
+    public static void main4(String[] args) {
         FileTripleExtractor ftp1 = new FileTripleExtractor("/Users/serch/Proyects/gitRepos/SemEngine/demo/HomePages-obj.swbdb");
         long count = 0;
         for (int x = 0; x < 200; x++) {
@@ -58,6 +66,27 @@ public class TripleComparator {
             ftp1.consumeCurrentTriple();
         }
         ftp1.close();
+    }
+    
+    public static void main (String[] args) throws IOException {
+        Map params = new HashMap();
+        params.put("path", "./demo");
+        Graph tGraph = new GraphImp("HomePages", params);
+        TripleFileReader tfr = new TripleFileReader("/Users/serch/Proyects/gitRepos/SemEngine/demo/HomePages-sub", tGraph);
+        Triple[] tg = tfr.getTripleGroup();
+        System.out.println("Triple-1:"+tg[0].toString());
+        tfr.advance();
+        tg = tfr.getTripleGroup();
+        System.out.println("Triple-2:"+tg[0].toString());
+        tfr.advance();
+        tg = tfr.getTripleGroup();
+        System.out.println("Triple-3:"+tg[0].toString());
+        tfr.advance();
+        tg = tfr.getTripleGroup();
+        System.out.println("Triple-4:"+tg[0].toString());
+        tfr.advance();
+        tg = tfr.getTripleGroup();
+        System.out.println("Triple-5:"+tg[0].toString());
     }
 
     static String getString(FakeTriple triple) {

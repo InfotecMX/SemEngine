@@ -1,9 +1,11 @@
 package org.semanticwb.store.flatstore;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -29,6 +31,9 @@ public class GraphImp extends Graph {
     private final int BLOCK_SIZE = 500_000;
     private ConcurrentHashMap<String, String> prefixMaps = new ConcurrentHashMap<>();
     private final File directory;
+    private final TripleFileReader subFileReader;
+    private final TripleFileReader propFileReader;
+    private final TripleFileReader objFileReader;
 
     public GraphImp(String name, Map<String, String> params) {
         super(name, params);
@@ -41,10 +46,20 @@ public class GraphImp extends Graph {
             if (!dir.isDirectory()) {
                 throw new IllegalArgumentException("path supplied points to an actual file");
             } else {
-                openBase(dir);
+                try {
+                    openBase(dir);
+                    subFileReader = new TripleFileReader(dir.getCanonicalPath()+name+"-sub", this);
+                    propFileReader = new TripleFileReader(dir.getCanonicalPath()+name+"-pro", this);
+                    objFileReader = new TripleFileReader(dir.getCanonicalPath()+name+"-obj", this);
+                } catch (IOException ioe){
+                    throw new RuntimeException("Opening a base",ioe);
+                }
             }
         } else {
             dir.mkdirs();
+            subFileReader=null;
+            propFileReader=null;
+            objFileReader=null;
         }
         directory = dir;
     }
@@ -116,20 +131,34 @@ public class GraphImp extends Graph {
     }
 
     private void savePrefixes() throws IOException {
-        ObjectOutputStream outputFile = new ObjectOutputStream(new FileOutputStream(new File(directory, getName() + ".prfx")));
-        System.out.println("prefixes:" + prefixMaps.size());
-        long time = System.currentTimeMillis();
-        prefixMaps.keySet().stream().forEachOrdered(entry -> saveEntry(entry, prefixMaps.get(entry), outputFile));
-        outputFile.close();
+        long time;
+        try (ObjectOutputStream outputFile = new ObjectOutputStream(new FileOutputStream(new File(directory, getName() + ".prfx")))) {
+            System.out.println("prefixes:" + prefixMaps.size());
+            time = System.currentTimeMillis();
+            outputFile.writeInt(prefixMaps.keySet().size());
+            prefixMaps.keySet().stream().forEachOrdered(entry -> saveEntry(entry, prefixMaps.get(entry), outputFile));
+        }
         System.out.println("prefixes time:" + (System.currentTimeMillis() - time));
     }
 
     private void saveEntry(String key, String value, ObjectOutputStream oos) {
         try {
-            oos.writeObject(key);
-            oos.writeObject(value);
+            oos.writeUTF(key);
+            oos.writeUTF(value);
         } catch (IOException ioe) {
             throw new RuntimeException("Salving prefixes", ioe);
+        }
+    }
+    
+    
+    private void loadPrefixes(File dir) throws IOException {
+        try (ObjectInputStream inputFile = new ObjectInputStream(new FileInputStream(new File(dir, getName() + ".prfx")))) {
+            int size = inputFile.readInt();
+            for (int i=0; i < size; i++){
+                String key = inputFile.readUTF();
+                String value = inputFile.readUTF();
+                prefixMaps.put(key, value);
+            }
         }
     }
 
@@ -198,8 +227,9 @@ public class GraphImp extends Graph {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private void openBase(File dir) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void openBase(File dir) throws IOException {
+        loadPrefixes(dir);
+        
     }
 
 }
