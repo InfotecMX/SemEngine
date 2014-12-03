@@ -20,7 +20,7 @@ public class TripleFileReader {
     private final Graph graphReference;
 
     private long idxPosition = 0;
-    private long dataPosition = 0;
+    //private long dataPosition = 0;
 
     public TripleFileReader(String baseFilename, Graph graphReference) throws FileNotFoundException {
         this.baseFilename = baseFilename;
@@ -28,27 +28,38 @@ public class TripleFileReader {
         data = new RandomAccessFile(this.baseFilename + ".swbdb", "r");
         idx = new RandomAccessFile(this.baseFilename + ".idx", "r");
     }
-    
-    public void reset(){
+
+    public void reset() {
         idxPosition = 0;
     }
-    
+
     public Triple[] getTripleGroup() throws IOException {
         return getTripleGroup(getIdxData());
     }
-    
-    public void advance(){
+
+    public void advance() {
         idxPosition += 12;
+    }
+
+    public long count() throws IOException {
+        long ret = 0;
+        reset();
+        long size = idx.length() / 12;
+        for (int i = 0; i < size; i++) {
+            ret += getIdxData().getNumObjects();
+            advance();
+        }
+        return ret;
     }
 
     private IdxData getIdxData() throws IOException {
         idx.seek(idxPosition);
         byte[] idxData = new byte[12];
-        idx.read(idxData); 
+        idx.read(idxData);
         ByteBuffer bb = ByteBuffer.wrap(idxData);
         return new IdxData(bb.getLong(), bb.getInt());
     }
-    
+
     private IdxData getNextIdxData() throws IOException {
         idxPosition += 12;
         return getIdxData();
@@ -64,9 +75,9 @@ public class TripleFileReader {
         }
         return ret;
     }
-    
+
     private Triple getTripleAt(long position) throws IOException {
-        return TripleWrapper.getTripleFromData(graphReference, 
+        return TripleWrapper.getTripleFromData(graphReference,
                 getDataBlock(position));
     }
 
@@ -84,7 +95,16 @@ public class TripleFileReader {
     private String getSubjectAt(long position) throws IOException {
         byte[] buff = getDataBlock(position);
         int subSize = ByteBuffer.wrap(buff).getInt(4);
-        return new String(buff,16, subSize, "utf-8");
+        return new String(buff, 16, subSize, "utf-8");
+    }
+
+    void close() throws IOException {
+        if (null != data) {
+            data.close();
+        }
+        if (null != idx) {
+            idx.close();
+        }
     }
 }
 

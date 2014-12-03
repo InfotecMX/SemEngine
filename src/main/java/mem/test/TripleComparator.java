@@ -5,8 +5,6 @@
  */
 package mem.test;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -73,20 +71,26 @@ public class TripleComparator {
         params.put("path", "./demo");
         Graph tGraph = new GraphImp("HomePages", params);
         TripleFileReader tfr = new TripleFileReader("/Users/serch/Proyects/gitRepos/SemEngine/demo/HomePages-sub", tGraph);
+        tfr.reset();
         Triple[] tg = tfr.getTripleGroup();
-        System.out.println("Triple-1:"+tg[0].toString());
+        System.out.println("Triple-1:"+tg.length+"- "+tg[0].toString());
+        System.out.println("Triple-1:"+tg[tg.length-1].toString());
         tfr.advance();
         tg = tfr.getTripleGroup();
-        System.out.println("Triple-2:"+tg[0].toString());
+        System.out.println("Triple-2:"+tg.length+"- "+tg[0].toString());
+        System.out.println("Triple-2:"+tg[tg.length-1].toString());
         tfr.advance();
         tg = tfr.getTripleGroup();
-        System.out.println("Triple-3:"+tg[0].toString());
+        System.out.println("Triple-3:"+tg.length+"- "+tg[0].toString());
+        System.out.println("Triple-3:"+tg[tg.length-1].toString());
         tfr.advance();
         tg = tfr.getTripleGroup();
-        System.out.println("Triple-4:"+tg[0].toString());
+        System.out.println("Triple-4:"+tg.length+"- "+tg[0].toString());
+        System.out.println("Triple-4:"+tg[tg.length-1].toString());
         tfr.advance();
         tg = tfr.getTripleGroup();
-        System.out.println("Triple-5:"+tg[0].toString());
+        System.out.println("Triple-5:"+tg.length+"- "+tg[0].toString());
+        System.out.println("Triple-5:"+tg[tg.length-1].toString());
     }
 
     static String getString(FakeTriple triple) {

@@ -34,6 +34,7 @@ public class GraphImp extends Graph {
     private final TripleFileReader subFileReader;
     private final TripleFileReader propFileReader;
     private final TripleFileReader objFileReader;
+    private boolean isClosed = true;
 
     public GraphImp(String name, Map<String, String> params) {
         super(name, params);
@@ -48,18 +49,22 @@ public class GraphImp extends Graph {
             } else {
                 try {
                     openBase(dir);
-                    subFileReader = new TripleFileReader(dir.getCanonicalPath()+name+"-sub", this);
-                    propFileReader = new TripleFileReader(dir.getCanonicalPath()+name+"-pro", this);
-                    objFileReader = new TripleFileReader(dir.getCanonicalPath()+name+"-obj", this);
-                } catch (IOException ioe){
-                    throw new RuntimeException("Opening a base",ioe);
+                    subFileReader = new TripleFileReader(dir.getCanonicalPath() + "/" + name + "-sub", this);
+                    System.out.println("Triples-S: " + subFileReader.count());
+                    propFileReader = new TripleFileReader(dir.getCanonicalPath() + "/" + name + "-pro", this);
+                    System.out.println("Triples-P: " + propFileReader.count());
+                    objFileReader = new TripleFileReader(dir.getCanonicalPath() + "/" + name + "-obj", this);
+                    System.out.println("Triples-O: " + objFileReader.count());
+                    isClosed = false;
+                } catch (IOException ioe) {
+                    throw new RuntimeException("Opening a base", ioe);
                 }
             }
         } else {
             dir.mkdirs();
-            subFileReader=null;
-            propFileReader=null;
-            objFileReader=null;
+            subFileReader = null;
+            propFileReader = null;
+            objFileReader = null;
         }
         directory = dir;
     }
@@ -84,30 +89,28 @@ public class GraphImp extends Graph {
         Iterator<Triple> it = read2(ntFileName, 0, 0);
         int count = 0;
         long triples = 0;
-        int works = 0;
         List<TripleWrapper> lista = new ArrayList<>((int) (BLOCK_SIZE * 1.2));
         long lecturaStart = System.currentTimeMillis();
         while (it.hasNext()) {
             lista.add(new TripleWrapper(it.next(), this));
             triples++;
-            works++;
             if (BLOCK_SIZE == lista.size()) {
                 pool.submit(new WriterTask(getFilename(directory, this.getName(), ++count).getCanonicalPath(), lista));
-//                if (works % 6 == 0) {
-                    Thread.sleep(1000);
-//                }
+                Thread.sleep(1000);
                 lista = new ArrayList<>((int) (BLOCK_SIZE * 1.2));
-
             }
         }
         if (lista.size() > 0) {
+            System.out.println("TriplesLast: " + lista.size());
             pool.submit(new WriterTask(getFilename(directory, this.getName(), ++count).getCanonicalPath(), lista));
         }
         System.out.println("Lectura y envío de trabajos: " + (System.currentTimeMillis() - lecturaStart));
         System.out.println("triples: " + triples);
         Thread.sleep(1000);
         pool.shutdown();
-        while (!pool.awaitTermination(1, TimeUnit.SECONDS)) System.out.println("Waiting...");; //Necesitamos esperar a que los archivos parciales se hayan escrito
+        while (!pool.awaitTermination(1, TimeUnit.SECONDS)) {
+            System.out.println("Waiting...");
+        }; //Necesitamos esperar a que los archivos parciales se hayan escrito
         System.out.println("Escritura paso 1: " + (System.currentTimeMillis() - lecturaStart));
 
         compact(count, triples);
@@ -149,15 +152,16 @@ public class GraphImp extends Graph {
             throw new RuntimeException("Salving prefixes", ioe);
         }
     }
-    
-    
+
     private void loadPrefixes(File dir) throws IOException {
-        try (ObjectInputStream inputFile = new ObjectInputStream(new FileInputStream(new File(dir, getName() + ".prfx")))) {
+        File file = new File(dir, getName() + ".prfx");
+        System.out.println("file:" + file.getCanonicalPath());
+        try (ObjectInputStream inputFile = new ObjectInputStream(new FileInputStream(file))) {
             int size = inputFile.readInt();
-            for (int i=0; i < size; i++){
+            for (int i = 0; i < size; i++) {
                 String key = inputFile.readUTF();
                 String value = inputFile.readUTF();
-                prefixMaps.put(key, value);
+                addNameSpace(key, value);
             }
         }
     }
@@ -189,12 +193,25 @@ public class GraphImp extends Graph {
 
     @Override
     public boolean isClosed() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return isClosed;
     }
 
     @Override
     public void close() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        try {
+            isClosed = true;
+            if (null != subFileReader) {
+                subFileReader.close();
+            }
+            if (null != propFileReader) {
+                propFileReader.close();
+            }
+            if (null != objFileReader) {
+                objFileReader.close();
+            }
+        } catch (IOException ioe) {
+            //TODO: Log Error closing files
+        }
     }
 
     @Override
@@ -224,12 +241,17 @@ public class GraphImp extends Graph {
 
     @Override
     public long count() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        long ret = -1;
+        try {
+            ret = subFileReader.count();
+        } catch (IOException ioe) {
+            //TODO: Log Error handling the idx file
+        }
+        return ret;
     }
 
     private void openBase(File dir) throws IOException {
         loadPrefixes(dir);
-        
     }
 
 }
