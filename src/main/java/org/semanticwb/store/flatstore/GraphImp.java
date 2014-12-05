@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import org.semanticwb.store.Graph;
 import org.semanticwb.store.SObject;
@@ -85,7 +86,7 @@ public class GraphImp extends Graph {
     }
 
     public void createFromNT(String ntFileName) throws IOException, InterruptedException {
-        ExecutorService pool = Executors.newFixedThreadPool(4);
+        ExecutorService pool = Executors.newFixedThreadPool(4); 
         Iterator<Triple> it = read2(ntFileName, 0, 0);
         int count = 0;
         long triples = 0;
@@ -95,8 +96,11 @@ public class GraphImp extends Graph {
             lista.add(new TripleWrapper(it.next(), this));
             triples++;
             if (BLOCK_SIZE == lista.size()) {
+                while(((ThreadPoolExecutor)pool).getQueue().size()>4){
+                    System.out.println("Waiting to submit job...");
+                    Thread.sleep(500);
+                }
                 pool.submit(new WriterTask(getFilename(directory, this.getName(), ++count).getCanonicalPath(), lista));
-                Thread.sleep(1000);
                 lista = new ArrayList<>((int) (BLOCK_SIZE * 1.2));
             }
         }
