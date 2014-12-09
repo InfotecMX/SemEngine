@@ -92,19 +92,23 @@ public class GraphImp extends Graph {
         long triples = 0;
         List<TripleWrapper> lista = new ArrayList<>((int) (BLOCK_SIZE * 1.2));
         long lecturaStart = System.currentTimeMillis();
+        long time2sub = lecturaStart;
         while (it.hasNext()) {
             lista.add(new TripleWrapper(it.next(), this));
             triples++;
             if (BLOCK_SIZE == lista.size()) {
-                while(((ThreadPoolExecutor)pool).getQueue().size()>4){
+                System.out.println("dataGathered "+count+":"+(System.currentTimeMillis()-time2sub));
+                while(((ThreadPoolExecutor)pool).getQueue().size()>2){
                     System.out.println("Waiting to submit job...");
                     Thread.sleep(500);
                 }
                 pool.submit(new WriterTask(getFilename(directory, this.getName(), ++count).getCanonicalPath(), lista));
                 lista = new ArrayList<>((int) (BLOCK_SIZE * 1.2));
+                time2sub = System.currentTimeMillis();
             }
         }
         if (lista.size() > 0) {
+            System.out.println("dataGathered "+count+":"+(System.currentTimeMillis()-time2sub));
             System.out.println("TriplesLast: " + lista.size());
             pool.submit(new WriterTask(getFilename(directory, this.getName(), ++count).getCanonicalPath(), lista));
         }
