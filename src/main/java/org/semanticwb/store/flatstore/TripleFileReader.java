@@ -32,11 +32,11 @@ public class TripleFileReader {
     public void reset() {
         idxPosition = 0;
     }
-
+/*
     public Triple[] getTripleGroup() throws IOException {
         return getTripleGroup(getIdxData());
     }
-
+*/
     public void advance() {
         idxPosition += 12;
     }
@@ -64,7 +64,7 @@ public class TripleFileReader {
         idxPosition += 12;
         return getIdxData();
     }
-
+/*
     private Triple[] getTripleGroup(IdxData idx) throws IOException {
         Triple[] ret = new Triple[idx.getNumObjects()];
         long currPosition = idx.getPosition();
@@ -80,7 +80,7 @@ public class TripleFileReader {
         return TripleWrapper.getTripleFromData(graphReference,
                 getDataBlock(position));
     }
-
+*/
     private byte[] getDataBlock(long position) throws IOException {
         data.seek(position);
         byte[] header = new byte[4];

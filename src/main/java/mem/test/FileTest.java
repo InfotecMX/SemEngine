@@ -38,9 +38,9 @@ public class FileTest {
     
     public static void main(String[] args) throws IOException {
         Map params = new HashMap();
-        params.put("path", ".");
-        Graph tgraph=new GraphImp("SWBAdmin", params);
-        FlatStoreFile fff = FlatStoreFile.open("./fffdemo01", tgraph);
+        params.put("path", "/data/SemTest/");
+        Graph tgraph = new GraphImp("SWBAdmin", params);
+        FlatStoreFile fff = FlatStoreFile.create("/data/SemTest/SemSWBTest", tgraph);
         Triple t;
         long pos = 0;
 //        t = fff.readTriple(0);

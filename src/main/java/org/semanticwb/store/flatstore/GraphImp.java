@@ -8,9 +8,11 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -86,27 +88,51 @@ public class GraphImp extends Graph {
     }
 
     public void createFromNT(String ntFileName) throws IOException, InterruptedException {
-        ExecutorService pool = Executors.newFixedThreadPool(4); 
+        ExecutorService pool = Executors.newFixedThreadPool(4);
         Iterator<Triple> it = read2(ntFileName, 0, 0);
         int count = 0;
         long triples = 0;
-        List<TripleWrapper> lista = new ArrayList<>((int) (BLOCK_SIZE * 1.2));
+
+        Comparator comp=new Comparator<TripleWrapper>(){
+            @Override
+            public int compare(TripleWrapper o1, TripleWrapper o2) {
+                if(o1.getInxData().compareTo(o2.getInxData())>0)return 1;
+                else return -1;
+            }
+        };
+        
+//        TreeSet<TripleWrapper> listaS = new TreeSet<TripleWrapper>(comp);
+//        TreeSet<TripleWrapper> listaP = new TreeSet<TripleWrapper>(comp);
+//        TreeSet<TripleWrapper> listaO = new TreeSet<TripleWrapper>(comp);
+        
+        ArrayList<TripleWrapper> listaS = new ArrayList<TripleWrapper>(BLOCK_SIZE);
+        ArrayList<TripleWrapper> listaP = new ArrayList<TripleWrapper>(BLOCK_SIZE);
+        ArrayList<TripleWrapper> listaO = new ArrayList<TripleWrapper>(BLOCK_SIZE);
+
         long lecturaStart = System.currentTimeMillis();
+        long time2sub = lecturaStart;
         while (it.hasNext()) {
-            lista.add(new TripleWrapper(it.next(), this));
+            listaS.add(new TripleWrapper(it.next(), this, 1));
+            listaP.add(new TripleWrapper(it.next(), this, 2));
+            listaO.add(new TripleWrapper(it.next(), this, 3));
             triples++;
-            if (BLOCK_SIZE == lista.size()) {
-                while(((ThreadPoolExecutor)pool).getQueue().size()>4){
+            if (BLOCK_SIZE == listaS.size()) {
+                System.out.println("DataGathered "+count+":"+(System.currentTimeMillis()-time2sub));
+                while (WriterTask.intances > 1) {
                     System.out.println("Waiting to submit job...");
                     Thread.sleep(500);
                 }
-                pool.submit(new WriterTask(getFilename(directory, this.getName(), ++count).getCanonicalPath(), lista));
-                lista = new ArrayList<>((int) (BLOCK_SIZE * 1.2));
+                //System.out.println("Add Task");
+                pool.submit(new WriterTask(getFilename(directory, this.getName(), ++count).getCanonicalPath(), listaS,listaP,listaO));
+                listaS = new ArrayList<TripleWrapper>(BLOCK_SIZE);
+                listaP = new ArrayList<TripleWrapper>(BLOCK_SIZE);
+                listaO = new ArrayList<TripleWrapper>(BLOCK_SIZE);
+                time2sub=System.currentTimeMillis();
             }
         }
-        if (lista.size() > 0) {
-            System.out.println("TriplesLast: " + lista.size());
-            pool.submit(new WriterTask(getFilename(directory, this.getName(), ++count).getCanonicalPath(), lista));
+        if (listaS.size() > 0) {
+                System.out.println("DataGathered "+count+":"+(System.currentTimeMillis()-time2sub));
+                pool.submit(new WriterTask(getFilename(directory, this.getName(), ++count).getCanonicalPath(), listaS,listaP,listaO));
         }
         System.out.println("Lectura y envío de trabajos: " + (System.currentTimeMillis() - lecturaStart));
         System.out.println("triples: " + triples);

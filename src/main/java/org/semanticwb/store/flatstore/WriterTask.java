@@ -9,6 +9,7 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.Comparator;
+import java.util.Set;
 import java.util.function.Function;
 import org.semanticwb.store.TripleWrapper;
 
@@ -16,32 +17,39 @@ import org.semanticwb.store.TripleWrapper;
  *
  * @author serch
  */
-public class WriterTask implements Callable<String>{
+public class WriterTask implements Callable<String>
+{
+    public static volatile int intances=0;
+    
     private final String baseFilename;
-    final private List<TripleWrapper> list;
+    final private List<TripleWrapper> listS;
+    final private List<TripleWrapper> listP;
+    final private List<TripleWrapper> listO;
     private OutputStream out;
     
     
-    private final Function<TripleWrapper, String> bySubject = TripleWrapper::getSubject;
-    private final Function<TripleWrapper, String> byProp = TripleWrapper::getProperty;
-    private final Function<TripleWrapper, String> byObj = TripleWrapper::getObject;
+//    private final Function<TripleWrapper, String> bySubject = TripleWrapper::getSubject;
+//    private final Function<TripleWrapper, String> byProp = TripleWrapper::getProperty;
+//    private final Function<TripleWrapper, String> byObj = TripleWrapper::getObject;
     
-    private Comparator<TripleWrapper> subjectOrder = 
-            Comparator.comparing(bySubject)
-                    .thenComparing(byProp)
-                    .thenComparing(byObj);
-    private Comparator<TripleWrapper> propertyOrder = 
-            Comparator.comparing(byProp)
-                    .thenComparing(byObj)
-                    .thenComparing(bySubject);
-    private Comparator<TripleWrapper> objectOrder = 
-            Comparator.comparing(byObj)
-                    .thenComparing(bySubject)
-                    .thenComparing(byProp);
+//    private Comparator<TripleWrapper> subjectOrder = 
+//            Comparator.comparing(bySubject)
+//                    .thenComparing(byProp)
+//                    .thenComparing(byObj);
+//    private Comparator<TripleWrapper> propertyOrder = 
+//            Comparator.comparing(byProp)
+//                    .thenComparing(byObj)
+//                    .thenComparing(bySubject);
+//    private Comparator<TripleWrapper> objectOrder = 
+//            Comparator.comparing(byObj)
+//                    .thenComparing(bySubject)
+//                    .thenComparing(byProp);
     
-    public WriterTask(String baseFilename, List<TripleWrapper> list) {
+    public WriterTask(String baseFilename, List<TripleWrapper> listS,List<TripleWrapper> listP,List<TripleWrapper> listO) {
         this.baseFilename = baseFilename;
-        this.list = list;
+        this.listS = listS;
+        this.listP = listP;
+        this.listO = listO;
     }
     
     public void open(String type) throws IOException {
@@ -54,36 +62,36 @@ public class WriterTask implements Callable<String>{
     
     @Override
     public String call() throws IOException {
+        intances++;
+        
+        Comparator<TripleWrapper> comp=new Comparator<TripleWrapper>(){
+            @Override
+            public int compare(TripleWrapper o1, TripleWrapper o2) { 
+                return o1.getInxData().compareTo(o2.getInxData());
+            }
+        };        
+        
+        
+        System.out.println("Init Task");
         long time = System.currentTimeMillis();
         open("-sub");
-        list.stream()
-            .sorted(subjectOrder)
-            .forEachOrdered(this::writeToFile);
+        listS.stream().sorted(comp).forEachOrdered(this::writeToFile);
         close();
         open("-pro");
-        list.stream()
-            .sorted(propertyOrder)
-            .forEachOrdered(this::writeToFile);
+        listP.stream().sorted(comp).forEachOrdered(this::writeToFile);
         close();
         open("-obj");
-        list.stream()
-            .sorted(objectOrder)
-            .forEachOrdered(this::writeToFile);
+        listO.stream().sorted(comp).forEachOrdered(this::writeToFile);
         close();
         System.out.println("time to write "+ baseFilename + "family : "+(System.currentTimeMillis()-time));
+        System.out.println("end Task");
+        intances--;
         return "Wrote "+baseFilename+" family";
     }
     
     private void writeToFile(TripleWrapper triple) {
         try {
-        byte[] sub = triple.getSubject().getBytes("utf-8");
-        byte[] prop = triple.getProperty().getBytes("utf-8");
-        byte[] obj = triple.getObject().getBytes("utf-8");
-        int lt = sub.length + prop.length + obj.length + 20;
-        byte[] data = ByteBuffer.allocate(lt).putInt(lt).putInt(sub.length)
-                .putInt(prop.length).putInt(obj.length).put(sub).put(prop)
-                .put(obj).putInt(lt).array();
-        out.write(data);
+            out.write(triple.getData());
         } catch (IOException ioe) {
             throw new WriterTaskException(ioe);
         }

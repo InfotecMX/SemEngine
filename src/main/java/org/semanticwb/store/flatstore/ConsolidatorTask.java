@@ -31,7 +31,8 @@ public class ConsolidatorTask implements Runnable {
     private long startPos = 0;
     private int count = 0;
     private final int idx;
-    private final Comparator cmp;
+    private final Function<FileTripleExtractor, String> byData = FileTripleExtractor::getCurrentIdxData;
+    private final Comparator cmp = Comparator.comparing(byData);      
 
     private long tripleCounter = 0;
 
@@ -39,7 +40,6 @@ public class ConsolidatorTask implements Runnable {
             long triples, int idx) throws FileNotFoundException {
         this.numberChunks = numberChunks;
         this.idx = idx;
-        this.cmp = getComparator();
         this.name = name;
         this.directory = directory;
         this.triples = triples;
@@ -83,9 +83,12 @@ public class ConsolidatorTask implements Runnable {
      }
      */
     private void processInternal(FileTripleExtractor[] archivos) {
+        
+        
+        
         FileTripleExtractor[] listaDatos = archivos;
         Arrays.sort(listaDatos, cmp);
-        previous = getValue(listaDatos[0].getCurrentTriple());
+        previous = listaDatos[0].getCurrentTriple().getGroup();
         for (int i = 0; i < triples; i++) {
             internalSorter(cmp, listaDatos);
             FakeTriple ft = listaDatos[0].getCurrentTriple();
@@ -95,35 +98,11 @@ public class ConsolidatorTask implements Runnable {
                 listaDatos[0].close();
                 listaDatos[0].delete();
                 listaDatos = Arrays.copyOfRange(listaDatos, 1, listaDatos.length);
+                
+                System.out.println("listaDatos:"+listaDatos.length+" "+triples+" "+i+" "+(triples-i));
             }
         }
         idxList.add(new JumpFast(startPos, count));
-    }
-
-    private Comparator getComparator() {
-        switch (idx) {
-            case 0:
-                return subjectOrder;
-            case 1:
-                return propertyOrder;
-            case 2:
-                return objectOrder;
-            default:
-                return null;
-        }
-    }
-
-    private String getValue(FakeTriple fake) {
-        switch (idx) {
-            case 0:
-                return fake.getSubject();
-            case 1:
-                return fake.getProperty();
-            case 2:
-                return fake.getObject();
-            default:
-                return null;
-        }
     }
 
     private String getSufix() {
@@ -158,20 +137,6 @@ public class ConsolidatorTask implements Runnable {
         }
     }
 
-    private final Function<FileTripleExtractor, String> bySubject = FileTripleExtractor::getCurrentSubject;
-    private final Function<FileTripleExtractor, String> byProperty = FileTripleExtractor::getCurrentProperty;
-    private final Function<FileTripleExtractor, String> byObject = FileTripleExtractor::getCurrentObject;
-
-    public Comparator subjectOrder = Comparator.comparing(bySubject)
-            .thenComparing(byProperty)
-            .thenComparing(byObject);
-    public Comparator propertyOrder = Comparator.comparing(byProperty)
-            .thenComparing(byObject)
-            .thenComparing(bySubject);
-    public Comparator objectOrder = Comparator.comparing(byObject)
-            .thenComparing(bySubject)
-            .thenComparing(byProperty);
-
     private long saveTriple(FakeTriple ft) {
         try {
             long position = dataFile.length();
@@ -185,9 +150,9 @@ public class ConsolidatorTask implements Runnable {
 
     private void save(FakeTriple ft) {
         long triplePosition = saveTriple(ft);
-        if (!getValue(ft).equals(previous)) {
+        if (!ft.getGroup().equals(previous)) {
                 idxList.add(new JumpFast(startPos, count));
-                previous = getValue(ft);
+                previous = ft.getGroup();
                 count = 0;
                 startPos = triplePosition;
         }

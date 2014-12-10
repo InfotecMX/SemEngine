@@ -71,18 +71,10 @@ public class FileTripleExtractor {
         }
     }
 
-    public String getCurrentSubject(){
-        return currentTriple.getSubject();
+    public String getCurrentIdxData(){
+        return currentTriple.getData();
     }
     
-    public String getCurrentProperty(){
-        return currentTriple.getProperty();
-    }
-    
-    public String getCurrentObject(){
-        return currentTriple.getObject();
-    }
-
     public boolean delete() {
         return new File(filename).delete();
     }

@@ -54,7 +54,7 @@ public class Bench
 
                 System.out.println("time infoboxes:" + (System.currentTimeMillis() - time));
                 time = System.currentTimeMillis();
-                
+/*                
                 try
                 {
                     graph.load("/data/bench/geocoordinates-fixed.nt.gz",0,0);
@@ -73,7 +73,7 @@ public class Bench
                 {
                     e.printStackTrace();
                 }
-
+*/
                 System.out.println("time homepages:" + (System.currentTimeMillis() - time));
                 time = System.currentTimeMillis();       
                 

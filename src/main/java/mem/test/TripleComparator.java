@@ -24,6 +24,7 @@ public class TripleComparator {
     /**
      * @param args the command line arguments
      */
+/*    
     public static void main2(String[] args) {
         FileTripleExtractor ftp1 = new FileTripleExtractor("/Users/serch/Proyects/gitRepos/SemEngine/demo/HomePages.swbdb");
         FileTripleExtractor ftp2 = new FileTripleExtractor("/Users/serch/Proyects/gitRepos/SemEngine/demo1/HomePages.swbdb");
@@ -41,7 +42,9 @@ public class TripleComparator {
         ftp1.close();
         ftp2.close();
     }
-
+*/
+ /*   
+    
     public static void main3(String[] args) {
         FileTripleExtractor ftp1 = new FileTripleExtractor("/Users/serch/Proyects/gitRepos/SemEngine/demo/HomePages.swbdb");
         long count = 0;
@@ -65,7 +68,7 @@ public class TripleComparator {
         }
         ftp1.close();
     }
-    
+/*    
     public static void main (String[] args) throws IOException {
         Map params = new HashMap();
         params.put("path", "./demo");
@@ -96,4 +99,5 @@ public class TripleComparator {
     static String getString(FakeTriple triple) {
         return triple.getSubject() + "|" + triple.getProperty() + "|" + triple.getObject();
     }
+*/    
 }
