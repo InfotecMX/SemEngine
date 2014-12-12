@@ -1,16 +1,12 @@
 package org.semanticwb.store.flatstore;
 
 import java.io.BufferedOutputStream;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.Comparator;
-import java.util.Set;
-import java.util.function.Function;
 import org.semanticwb.store.TripleWrapper;
 
 /**

@@ -10,13 +10,10 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import org.semanticwb.store.Graph;
 import org.semanticwb.store.SObject;
@@ -52,11 +49,11 @@ public class GraphImp extends Graph {
             } else {
                 try {
                     openBase(dir);
-                    subFileReader = new TripleFileReader(dir.getCanonicalPath() + "/" + name + "-sub", this);
+                    subFileReader = new TripleFileReader(dir.getCanonicalPath() + "/" + name + "-sub", this, IdxBy.SUBJECT);
                     System.out.println("Triples-S: " + subFileReader.count());
-                    propFileReader = new TripleFileReader(dir.getCanonicalPath() + "/" + name + "-pro", this);
+                    propFileReader = new TripleFileReader(dir.getCanonicalPath() + "/" + name + "-pro", this, IdxBy.PROPERTY);
                     System.out.println("Triples-P: " + propFileReader.count());
-                    objFileReader = new TripleFileReader(dir.getCanonicalPath() + "/" + name + "-obj", this);
+                    objFileReader = new TripleFileReader(dir.getCanonicalPath() + "/" + name + "-obj", this, IdxBy.OBJECT);
                     System.out.println("Triples-O: " + objFileReader.count());
                     isClosed = false;
                 } catch (IOException ioe) {
@@ -93,28 +90,25 @@ public class GraphImp extends Graph {
         int count = 0;
         long triples = 0;
 
-        Comparator comp=new Comparator<TripleWrapper>(){
-            @Override
-            public int compare(TripleWrapper o1, TripleWrapper o2) {
-                if(o1.getInxData().compareTo(o2.getInxData())>0)return 1;
-                else return -1;
-            }
+        Comparator comp=(Comparator<TripleWrapper>) (TripleWrapper o1, TripleWrapper o2) -> {
+            if(o1.getInxData().compareTo(o2.getInxData())>0)return 1;
+            else return -1;
         };
         
 //        TreeSet<TripleWrapper> listaS = new TreeSet<TripleWrapper>(comp);
 //        TreeSet<TripleWrapper> listaP = new TreeSet<TripleWrapper>(comp);
 //        TreeSet<TripleWrapper> listaO = new TreeSet<TripleWrapper>(comp);
         
-        ArrayList<TripleWrapper> listaS = new ArrayList<TripleWrapper>(BLOCK_SIZE);
-        ArrayList<TripleWrapper> listaP = new ArrayList<TripleWrapper>(BLOCK_SIZE);
-        ArrayList<TripleWrapper> listaO = new ArrayList<TripleWrapper>(BLOCK_SIZE);
+        ArrayList<TripleWrapper> listaS = new ArrayList<>(BLOCK_SIZE);
+        ArrayList<TripleWrapper> listaP = new ArrayList<>(BLOCK_SIZE);
+        ArrayList<TripleWrapper> listaO = new ArrayList<>(BLOCK_SIZE);
 
         long lecturaStart = System.currentTimeMillis();
         long time2sub = lecturaStart;
         while (it.hasNext()) {
-            listaS.add(new TripleWrapper(it.next(), this, 1));
-            listaP.add(new TripleWrapper(it.next(), this, 2));
-            listaO.add(new TripleWrapper(it.next(), this, 3));
+            listaS.add(new TripleWrapper(it.next(), this, IdxBy.SUBJECT));
+            listaP.add(new TripleWrapper(it.next(), this, IdxBy.PROPERTY));
+            listaO.add(new TripleWrapper(it.next(), this, IdxBy.OBJECT));
             triples++;
             if (BLOCK_SIZE == listaS.size()) {
                 System.out.println("DataGathered "+count+":"+(System.currentTimeMillis()-time2sub));
@@ -124,9 +118,9 @@ public class GraphImp extends Graph {
                 }
                 //System.out.println("Add Task");
                 pool.submit(new WriterTask(getFilename(directory, this.getName(), ++count).getCanonicalPath(), listaS,listaP,listaO));
-                listaS = new ArrayList<TripleWrapper>(BLOCK_SIZE);
-                listaP = new ArrayList<TripleWrapper>(BLOCK_SIZE);
-                listaO = new ArrayList<TripleWrapper>(BLOCK_SIZE);
+                listaS = new ArrayList<>(BLOCK_SIZE);
+                listaP = new ArrayList<>(BLOCK_SIZE);
+                listaO = new ArrayList<>(BLOCK_SIZE);
                 time2sub=System.currentTimeMillis();
             }
         }
@@ -155,11 +149,11 @@ public class GraphImp extends Graph {
     }
 
     private void compact(int numberChunks, long triples) throws FileNotFoundException {
-        Thread compactor = new Thread(new ConsolidatorTask(numberChunks, getName(), directory, triples, 0));
+        Thread compactor = new Thread(new ConsolidatorTask(numberChunks, getName(), directory, triples, IdxBy.SUBJECT));
         compactor.start();
-        compactor = new Thread(new ConsolidatorTask(numberChunks, getName(), directory, triples, 1));
+        compactor = new Thread(new ConsolidatorTask(numberChunks, getName(), directory, triples, IdxBy.PROPERTY));
         compactor.start();
-        compactor = new Thread(new ConsolidatorTask(numberChunks, getName(), directory, triples, 2));
+        compactor = new Thread(new ConsolidatorTask(numberChunks, getName(), directory, triples, IdxBy.OBJECT));
         compactor.start();
     }
 

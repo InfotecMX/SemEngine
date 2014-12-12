@@ -18,25 +18,28 @@ public class TripleFileReader {
     private final RandomAccessFile idx;
     private final String baseFilename;
     private final Graph graphReference;
+    private final IdxBy ordering;
 
     private long idxPosition = 0;
     //private long dataPosition = 0;
 
-    public TripleFileReader(String baseFilename, Graph graphReference) throws FileNotFoundException {
+    public TripleFileReader(String baseFilename, Graph graphReference, IdxBy ordering) throws FileNotFoundException {
         this.baseFilename = baseFilename;
         this.graphReference = graphReference;
+        this.ordering = ordering;
         data = new RandomAccessFile(this.baseFilename + ".swbdb", "r");
         idx = new RandomAccessFile(this.baseFilename + ".idx", "r");
+        
     }
 
     public void reset() {
         idxPosition = 0;
     }
-/*
+
     public Triple[] getTripleGroup() throws IOException {
         return getTripleGroup(getIdxData());
     }
-*/
+
     public void advance() {
         idxPosition += 12;
     }
@@ -64,23 +67,38 @@ public class TripleFileReader {
         idxPosition += 12;
         return getIdxData();
     }
-/*
+    
+    private Triple getTripleFromData(byte[] buff){
+        Triple ret =null;
+        switch (ordering) {
+            case SUBJECT: 
+                ret = TripleWrapper.getTripleFromDataBySubject(graphReference, buff);
+                break;
+            case PROPERTY: 
+                ret = TripleWrapper.getTripleFromDataByProperty(graphReference, buff);
+                break;
+            case OBJECT: 
+                ret = TripleWrapper.getTripleFromDataByObject(graphReference, buff);
+                break;
+        }
+        return ret;
+    }
+
     private Triple[] getTripleGroup(IdxData idx) throws IOException {
         Triple[] ret = new Triple[idx.getNumObjects()];
         long currPosition = idx.getPosition();
         for (int i = 0; i < idx.getNumObjects(); i++) {
             byte[] buff = getDataBlock(currPosition);
-            ret[i] = TripleWrapper.getTripleFromData(graphReference, buff);
+            ret[i] = getTripleFromData(buff);
             currPosition += buff.length;
         }
         return ret;
     }
 
     private Triple getTripleAt(long position) throws IOException {
-        return TripleWrapper.getTripleFromData(graphReference,
-                getDataBlock(position));
+        return getTripleFromData(getDataBlock(position));
     }
-*/
+
     private byte[] getDataBlock(long position) throws IOException {
         data.seek(position);
         byte[] header = new byte[4];

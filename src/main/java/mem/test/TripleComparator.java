@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package mem.test;
 
 import java.io.IOException;
@@ -10,9 +5,8 @@ import java.util.HashMap;
 import java.util.Map;
 import org.semanticwb.store.Graph;
 import org.semanticwb.store.Triple;
-import org.semanticwb.store.flatstore.FakeTriple;
-import org.semanticwb.store.flatstore.FileTripleExtractor;
 import org.semanticwb.store.flatstore.GraphImp;
+import org.semanticwb.store.flatstore.IdxBy;
 import org.semanticwb.store.flatstore.TripleFileReader;
 
 /**
@@ -68,12 +62,12 @@ public class TripleComparator {
         }
         ftp1.close();
     }
-/*    
+    */
     public static void main (String[] args) throws IOException {
         Map params = new HashMap();
         params.put("path", "./demo");
-        Graph tGraph = new GraphImp("HomePages", params);
-        TripleFileReader tfr = new TripleFileReader("/Users/serch/Proyects/gitRepos/SemEngine/demo/HomePages-sub", tGraph);
+        Graph tGraph = new GraphImp("infoboxes", params);
+        TripleFileReader tfr = new TripleFileReader("/Users/serch/Proyects/gitRepos/SemEngine/demo/infoboxes-sub", tGraph, IdxBy.SUBJECT);
         tfr.reset();
         Triple[] tg = tfr.getTripleGroup();
         System.out.println("Triple-1:"+tg.length+"- "+tg[0].toString());
@@ -96,8 +90,8 @@ public class TripleComparator {
         System.out.println("Triple-5:"+tg[tg.length-1].toString());
     }
 
-    static String getString(FakeTriple triple) {
-        return triple.getSubject() + "|" + triple.getProperty() + "|" + triple.getObject();
-    }
-*/    
+//    static String getString(FakeTriple triple) {
+//        return triple.getSubject() + "|" + triple.getProperty() + "|" + triple.getObject();
+//    }
+   
 }

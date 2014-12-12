@@ -30,14 +30,14 @@ public class ConsolidatorTask implements Runnable {
     private String previous = null;
     private long startPos = 0;
     private int count = 0;
-    private final int idx;
+    private final IdxBy idx;
     private final Function<FileTripleExtractor, String> byData = FileTripleExtractor::getCurrentIdxData;
     private final Comparator cmp = Comparator.comparing(byData);      
 
     private long tripleCounter = 0;
 
     public ConsolidatorTask(int numberChunks, String name, File directory,
-            long triples, int idx) throws FileNotFoundException {
+            long triples, IdxBy idx) throws FileNotFoundException {
         this.numberChunks = numberChunks;
         this.idx = idx;
         this.name = name;
@@ -107,11 +107,11 @@ public class ConsolidatorTask implements Runnable {
 
     private String getSufix() {
         switch (idx) {
-            case 0:
+            case SUBJECT:
                 return "-sub";
-            case 1:
+            case PROPERTY:
                 return "-pro";
-            case 2:
+            case OBJECT:
                 return "-obj";
             default:
                 return null;
