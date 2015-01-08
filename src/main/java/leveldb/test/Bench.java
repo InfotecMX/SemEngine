@@ -44,16 +44,26 @@ public class Bench
 
             if (c == 0)
             {
+                
+                        
                 try
                 {
-                    graph.load("/data/bench/infoboxes-fixed.nt.gz",0,0);
+                    graph.load("/data/bench/SWBAdmin.nt",0,0);
                 } catch (Exception e)
                 {
                     e.printStackTrace();
-                }
+                }        
+                
+//                try
+//                {
+//                    graph.load("/data/bench/infoboxes-fixed.nt.gz",0,0);
+//                } catch (Exception e)
+//                {
+//                    e.printStackTrace();
+//                }
 
-                System.out.println("time infoboxes:" + (System.currentTimeMillis() - time));
-                time = System.currentTimeMillis();
+//                System.out.println("time infoboxes:" + (System.currentTimeMillis() - time));
+//                time = System.currentTimeMillis();
 /*                
                 try
                 {
@@ -74,8 +84,8 @@ public class Bench
                     e.printStackTrace();
                 }
 */
-                System.out.println("time homepages:" + (System.currentTimeMillis() - time));
-                time = System.currentTimeMillis();       
+//                System.out.println("time homepages:" + (System.currentTimeMillis() - time));
+//                time = System.currentTimeMillis();       
                 
                 
                 System.out.println(graph.count());          

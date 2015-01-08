@@ -33,6 +33,7 @@ public abstract class Graph
     private boolean encodeURIs=true;
     private boolean encodeObjects=true;
     private boolean encodeInstanceNumber=true;
+    private boolean encodeMaxURIs=true;
     
     private static NumberFormatTS nf=new NumberFormatTS(Locale.US);
     
@@ -588,7 +589,7 @@ public abstract class Graph
         if(no!=null)ret[2]=encNode(no);
         ret[3]="";
         
-        if(ret[2]!=null && ret[2].length()>MAX_OBJ)
+        if(encodeMaxURIs && ret[2]!=null && ret[2].length()>MAX_OBJ)
         {
              String th=Utils.getHash(ret[2]);
              if(th!=null)
@@ -831,6 +832,10 @@ public abstract class Graph
         String ret=getParam(param);
         if(ret==null)ret=defValue;
         return ret;
+    }
+
+    protected void setEncodeMaxURIs(boolean encodeMaxURIs) {
+        this.encodeMaxURIs = encodeMaxURIs;
     }
     
 }

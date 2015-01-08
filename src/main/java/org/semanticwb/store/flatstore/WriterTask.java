@@ -1,5 +1,6 @@
 package org.semanticwb.store.flatstore;
 
+import org.semanticwb.store.TripleWrapper;
 import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -7,7 +8,6 @@ import java.io.OutputStream;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.Comparator;
-import org.semanticwb.store.TripleWrapper;
 
 /**
  *

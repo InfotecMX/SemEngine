@@ -2,6 +2,9 @@ package org.semanticwb.store;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import org.semanticwb.store.Graph;
+import org.semanticwb.store.Triple;
+import org.semanticwb.store.flatstore.IdxBy;
 import org.semanticwb.store.flatstore.IdxBy;
 
 /**
@@ -30,17 +33,17 @@ public class TripleWrapper {
             case PROPERTY:
             {
                 data=p+o+s;
-                n2=s.length();
-                n3=p.length();
-                n1=o.length();
+                n3=s.length();
+                n1=p.length();
+                n2=o.length();
                 break;
             }
             case OBJECT:
             {
                 data=o+s+p;
-                n3=s.length();
-                n1=p.length();
-                n2=o.length();
+                n2=s.length();
+                n3=p.length();
+                n1=o.length();
             }
         }
     }

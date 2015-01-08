@@ -1,12 +1,10 @@
-package mem.test;
+package flatstore.test;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import org.semanticwb.store.Graph;
-import org.semanticwb.store.Triple;
 import org.semanticwb.store.flatstore.GraphImp;
 
 /**
@@ -22,13 +20,16 @@ public class StorageTest {
         
         long time = System.currentTimeMillis();        
         Map params = new HashMap();
-        params.put("path", "/data/SemTest/");
+        params.put("path", "/data/SWBAdmin/");
         
-        Graph tGraph = new GraphImp("infoboxes", params);
-        ((GraphImp)tGraph).createFromNT("/data/bench/infoboxes-fixed.nt.gz");
+        Graph tGraph = new GraphImp("SWBAdmin", params);
+        ((GraphImp)tGraph).createFromNT("/data/bench/SWBAdmin.nt");
         
-        //Graph tGraph = new GraphImp("DBMS100M", params);
-        //((GraphImp)tGraph).createFromNT("/data/bench/dataset_100m.nt.gz");
+//        Graph tGraph = new GraphImp("infoboxes", params);
+//        ((GraphImp)tGraph).createFromNT("/data/bench/infoboxes-fixed.nt.gz");
+        
+//        Graph tGraph = new GraphImp("DBMS100M", params);
+//        ((GraphImp)tGraph).createFromNT("/data/bench/dataset_100m.nt.gz");
         
         System.out.println("time: "+(System.currentTimeMillis()-time));
                    
@@ -41,7 +42,7 @@ public class StorageTest {
 //        }
 //        fte.close();
 //        
-        
+        tGraph.close();
     }
     
     private static File getFilename(File directory, String graphName, int part){

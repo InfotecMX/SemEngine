@@ -17,7 +17,8 @@ public class FakeTriple {
         ByteBuffer bb = ByteBuffer.wrap(bloq);
         
         data = new String(bloq, 16, bloq.length-20);
-        group = new String(bloq, 16, bb.getInt(4));
+        group = new String(bloq, 16, bb.getInt(4));        
+        //group = new String(bloq, 16, bb.getInt(4)+bb.getInt(8));
         
 //        sizes[0] = bb.getInt(4);
 //        sizes[1] = bb.getInt(8);

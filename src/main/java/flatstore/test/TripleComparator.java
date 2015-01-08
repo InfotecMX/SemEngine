@@ -1,4 +1,4 @@
-package mem.test;
+package flatstore.test;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -62,7 +62,7 @@ public class TripleComparator {
         }
         ftp1.close();
     }
-    */
+    
     public static void main (String[] args) throws IOException {
         Map params = new HashMap();
         params.put("path", "./demo");
@@ -72,19 +72,19 @@ public class TripleComparator {
         Triple[] tg = tfr.getTripleGroup();
         System.out.println("Triple-1:"+tg.length+"- "+tg[0].toString());
         System.out.println("Triple-1:"+tg[tg.length-1].toString());
-        tfr.advance();
+        tfr.next();
         tg = tfr.getTripleGroup();
         System.out.println("Triple-2:"+tg.length+"- "+tg[0].toString());
         System.out.println("Triple-2:"+tg[tg.length-1].toString());
-        tfr.advance();
+        tfr.next();
         tg = tfr.getTripleGroup();
         System.out.println("Triple-3:"+tg.length+"- "+tg[0].toString());
         System.out.println("Triple-3:"+tg[tg.length-1].toString());
-        tfr.advance();
+        tfr.next();
         tg = tfr.getTripleGroup();
         System.out.println("Triple-4:"+tg.length+"- "+tg[0].toString());
         System.out.println("Triple-4:"+tg[tg.length-1].toString());
-        tfr.advance();
+        tfr.next();
         tg = tfr.getTripleGroup();
         System.out.println("Triple-5:"+tg.length+"- "+tg[0].toString());
         System.out.println("Triple-5:"+tg[tg.length-1].toString());
@@ -93,5 +93,5 @@ public class TripleComparator {
 //    static String getString(FakeTriple triple) {
 //        return triple.getSubject() + "|" + triple.getProperty() + "|" + triple.getObject();
 //    }
-   
+   */
 }
