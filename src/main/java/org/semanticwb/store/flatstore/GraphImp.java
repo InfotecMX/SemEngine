@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -46,10 +47,10 @@ public class GraphImp extends Graph {
         if (null == path) {
             throw new IllegalArgumentException("Param path is missing in params map");
         }
-        File dir = new File(path);
+        File dir = new File(path, name);
         if (dir.exists()) {
             if (!dir.isDirectory()) {
-                throw new IllegalArgumentException("path supplied points to an actual file");
+                throw new IllegalArgumentException("path and name supplied points to an actual file");
             } else {
                 try {
                     openBase(dir);
@@ -92,27 +93,29 @@ public class GraphImp extends Graph {
         return localPrefix;
     }
 
-    public void createFromNT(String ntFileName) throws IOException, InterruptedException {
+    public void createFromNT(String... ntFileName) throws IOException, InterruptedException {
         ExecutorService pool = Executors.newFixedThreadPool(4);
-        Iterator<Triple> it = read2(ntFileName, 0, 0);
+        
         int count = 0;
         long triples = 0;
-
-        Comparator comp=(Comparator<TripleWrapper>) (TripleWrapper o1, TripleWrapper o2) -> {
-            if(o1.getInxData().compareTo(o2.getInxData())>0)return 1;
-            else return -1;
-        };
+//
+//        Comparator comp=(Comparator<TripleWrapper>) (TripleWrapper o1, TripleWrapper o2) -> {
+//            if(o1.getInxData().compareTo(o2.getInxData())>0)return 1;
+//            else return -1;
+//        };
         
 //        TreeSet<TripleWrapper> listaS = new TreeSet<TripleWrapper>(comp);
 //        TreeSet<TripleWrapper> listaP = new TreeSet<TripleWrapper>(comp);
 //        TreeSet<TripleWrapper> listaO = new TreeSet<TripleWrapper>(comp);
-        
+        long lecturaStart=0, time2sub=0;
+        for(String currentNtFile: ntFileName){
+        Iterator<Triple> it = read2(currentNtFile, 0, 0);
         ArrayList<TripleWrapper> listaS = new ArrayList<>(BLOCK_SIZE);
         ArrayList<TripleWrapper> listaP = new ArrayList<>(BLOCK_SIZE);
         ArrayList<TripleWrapper> listaO = new ArrayList<>(BLOCK_SIZE);
 
-        long lecturaStart = System.currentTimeMillis();
-        long time2sub = lecturaStart;
+        lecturaStart = System.currentTimeMillis();
+        time2sub = lecturaStart;
         while (it.hasNext()) {
             listaS.add(new TripleWrapper(it.next(), this, IdxBy.SUBJECT));
             listaP.add(new TripleWrapper(it.next(), this, IdxBy.PROPERTY));
@@ -137,6 +140,7 @@ public class GraphImp extends Graph {
         if (listaS.size() > 0) {
                 System.out.println("DataGathered "+(count+1)+":"+(System.currentTimeMillis()-time2sub));
                 pool.submit(new WriterTask(getFilename(directory, this.getName(), ++count).getCanonicalPath(), listaS,listaP,listaO));
+        }
         }
         System.out.println("Lectura y envío de trabajos: " + (System.currentTimeMillis() - lecturaStart));
         System.out.println("triples: " + triples);
