@@ -8,10 +8,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.nio.ByteBuffer;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.Map;
@@ -34,9 +31,9 @@ public class GraphImp extends Graph {
     private final int BLOCK_SIZE = 500_000;
     private ConcurrentHashMap<String, String> prefixMaps = new ConcurrentHashMap<>();
     private final File directory;
-    private final TripleFileReader subFileReader;
-    private final TripleFileReader propFileReader;
-    private final TripleFileReader objFileReader;
+    public final TripleFileReader subFileReader;
+    public final TripleFileReader propFileReader;
+    public final TripleFileReader objFileReader;
     private boolean isClosed = true;
     
     private Long t_size=null;
@@ -405,18 +402,11 @@ public class GraphImp extends Graph {
                     public SObject next()
                     {
                         SObject ret=null;
-                                
-                        ByteBuffer bb = ByteBuffer.wrap(act.getData());
-                        int i1 = bb.getInt(4);
-                        int i2 = bb.getInt(8);
-                        int i3 = bb.getInt(12);
-                        String s1=new String(act.getData(), 16, i1);
-                        String s2=new String(act.getData(), 16+i1, i2);
-                        String s3=new String(act.getData(), 16+i1+i2, i3);
-                        
-                        if(idxt==0)ret=new SObject(s1,s2,s3,"");
-                        if(idxt==1)ret=new SObject(s3,s1,s2,"");
-                        if(idxt==2)ret=new SObject(s2,s3,s1,"");
+                               
+                        String t[]=act.getTripleData();
+                        if(idxt==0)ret=new SObject(t[0],t[1],t[2],"");
+                        if(idxt==1)ret=new SObject(t[2],t[0],t[1],"");
+                        if(idxt==2)ret=new SObject(t[1],t[2],t[0],"");
                         
                         try
                         {

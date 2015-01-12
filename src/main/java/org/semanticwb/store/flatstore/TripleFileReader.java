@@ -156,18 +156,13 @@ public class TripleFileReader {
         if(idx==null)return null;
         
         long p=idx.getPosition();
+        PositionData datap=new PositionData(this, p);
         
-        while(p<dataLength)
+        while(datap!=null)
         {
-            byte data[]=getDataBlock(p);
-            int off=16;
-            int len=data.length-20;
-            if(len>match.length())len=match.length();
-                
-            String txt=new String(data, off, len);
-   
-            if(txt.compareTo(match)>=0)return new PositionData(this, p, data);
-            p+=data.length;
+            String txt=datap.getText(match.length());
+            if(txt.compareTo(match)>=0) return datap;
+            datap=datap.next();
         }
         return null;
     }
@@ -248,7 +243,14 @@ public class TripleFileReader {
                 break;
         }
         return ret;
-    }    
+    } 
+
+    public long getFileDataLength() {
+        return dataLength;
+    }
+    
+    
+    
     
 
     
@@ -319,4 +321,13 @@ public class TripleFileReader {
         return new String(buff, 16, subSize, "utf-8");
     }
 */
+
+    public long getFileIdxLength() {
+        return length;
+    }
+    
+    public long getIdxLength() {
+        return length/12;
+    }
+
 }
