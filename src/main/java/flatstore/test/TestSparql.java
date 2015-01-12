@@ -48,7 +48,7 @@ public class TestSparql
         String query="SELECT * WHERE {\n" +
         "  <http://dbpedia.org/resource/Metropolitan_Museum_of_Art> ?p ?o\n" +
         "}";        
-        query(query,model);        
+        query(query,model,true);        
         
         query="PREFIX p: <http://dbpedia.org/property/>\n" +
         "\n" +
@@ -90,7 +90,7 @@ public class TestSparql
         "     ?lat        >=     ?berlinLat - 0.03190235436 && \n" +
         "     ?long       <=     ?berlinLong + 0.08679199218)\n" +
         "}";        
-        query(query,model);  
+        query(query,model,true);  
         
         query="PREFIX geo: <http://www.w3.org/2003/01/geo/wgs84_pos#>\n" +
         "PREFIX foaf: <http://xmlns.com/foaf/0.1/>\n" +
@@ -110,7 +110,7 @@ public class TestSparql
         "     ?lat        >=     ?nyLat - 0.3190235436 && \n" +
         "     ?long       <=     ?nyLong + 0.8679199218)\n" +
         "}";        
-        query(query,model);          
+        query(query,model,true);          
         
         model.close();
         
@@ -120,6 +120,11 @@ public class TestSparql
     }
     
     public static void query(String query, Model model)
+    {
+        query(query, model, false);
+    }    
+    
+    public static void query(String query, Model model, boolean print)
     {
         long time=System.currentTimeMillis();        
         QueryExecution qe=null;//site.getSemanticModel().sparQLQuery(query);
@@ -142,18 +147,21 @@ public class TestSparql
         while(rs.hasNext())
         {
             QuerySolution qs=rs.next();
-//            Iterator<String> it=rs.getResultVars().iterator();
-//            while(it.hasNext())
-//            {
-//                String name=it.next();
-//                RDFNode node=qs.get(name);
-//                String val="";
-//                if(node!=null&&node.isLiteral())val=node.asLiteral().getLexicalForm();
-//                else if(node!=null&&node.isResource())val=node.asResource().getURI();
-//                System.out.print(val);
-//                System.out.print('\t');
-//            }
-//            System.out.println();
+            if(print)
+            {
+            Iterator<String> it=rs.getResultVars().iterator();
+            while(it.hasNext())
+            {
+                String name=it.next();
+                RDFNode node=qs.get(name);
+                String val="";
+                if(node!=null&&node.isLiteral())val=node.asLiteral().getLexicalForm();
+                else if(node!=null&&node.isResource())val=node.asResource().getURI();
+                System.out.print(val);
+                System.out.print('\t');
+            }
+            System.out.println();
+            }
             x++;
         }
         System.out.println("query:"+x+" "+(System.currentTimeMillis()-time));   
