@@ -23,10 +23,10 @@ public class ReadTest {
         
         long time = System.currentTimeMillis();        
         Map params = new HashMap();
-        params.put("path", "/data/SWBAdmin/");
+        params.put("path", "/data/flatstore/");
         
         //Graph tGraph = new GraphImp("infoboxes", params);      
-        Graph tGraph = new GraphImp("SWBAdmin", params);
+        Graph tGraph = new GraphImp("bench", params);
         
         System.out.println("Count:"+tGraph.count());
         System.out.println("time: "+(System.currentTimeMillis()-time));time=System.currentTimeMillis();

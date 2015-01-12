@@ -82,8 +82,8 @@ public class TripleFileReader {
         long currPosition=data.getPosition();
         int s=0;
         if(len>0)s=len;
-        else s=getDataInt(currPosition+4);
-        //else s=getDataInt(currPosition+4)+getDataInt(currPosition+8);
+        //else s=getDataInt(currPosition+4);
+        else s=getDataInt(currPosition+4)+getDataInt(currPosition+8);
         if(len>0 && len<s)s=len;
         byte[] buff = getData(currPosition+16,s);  //getDataBlock(currPosition);
         return new String(buff);
@@ -100,7 +100,7 @@ public class TripleFileReader {
             if(jump<FIND_SEC)
             {
 //                System.out.println("FIND_SEC:"+(index+1)+"<"+(index+jump));
-                for(long i=index+1;i<index+jump;i++)
+                for(long i=index;i<=index+jump;i++)
                 {
                     if(group.compareTo(getGroup(i,group.length()))<=0)return getIdxData(i);       
                 }
@@ -115,11 +115,12 @@ public class TripleFileReader {
             if(jump<FIND_SEC)
             {
 //                System.out.println("FIND_SEC:"+(index-jump)+"<"+(index));
-                for(long i=index-jump;i<index;i++)
+                for(long i=(index-jump)>0?index-jump:0;i<=index;i++)
                 {
 //                    System.out.println("findSec:"+group+":"+getGroup(i)+","+i+","+jump);
                     if(group.compareTo(getGroup(i,group.length()))<=0)return getIdxData(i);       
                 }
+                System.out.println("FIND_SEC:"+(index-jump)+"<"+(index));                
                 throw new RuntimeException("Error de logica...");
             }else
             {
@@ -130,20 +131,21 @@ public class TripleFileReader {
     
     public IdxData findGroup(String group) throws IOException
     {
+        String groupIni=group+(char)0;
         long index=0;
         long jump=size();
         
-        int c=group.compareTo(getGroup(index,group.length()));
+        int c=groupIni.compareTo(getGroup(index,groupIni.length()));
         if(c<=0)return getIdxData(index);
         else
         {
             index+=jump-1;
-            c=group.compareTo(getGroup(index,group.length()));
+            c=groupIni.compareTo(getGroup(index,groupIni.length()));
             if(c==0)return getIdxData(index);
             else if(c>0)return null;
             else
             {
-                return findInterGroup(group, index/2,jump/2);
+                return findInterGroup(groupIni, index/2,jump/2);
             }
         }
     }

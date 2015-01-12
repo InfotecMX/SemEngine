@@ -280,7 +280,7 @@ public class GraphImp extends Graph {
             if(p!=null)
             {
                 txt=txt+p;
-                //group=txt;
+                group=txt;
                 if(o!=null)
                 {
                     txt=txt+o;
@@ -289,10 +289,10 @@ public class GraphImp extends Graph {
             }else if(o!=null)
             {
                 ind=objFileReader;
-                group=o;
+                //group=o;
                 idx=2;
                 txt=o+s;
-                //group=txt;
+                group=txt;
             }
         }else if(p!=null)
         {
@@ -303,7 +303,7 @@ public class GraphImp extends Graph {
             if(o!=null)
             {
                 txt=txt+o;
-                //group=txt;
+                group=txt;
             }
         }else if(o!=null)
         {
