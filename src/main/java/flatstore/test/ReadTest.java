@@ -29,9 +29,9 @@ public class ReadTest {
         //Graph tGraph = new GraphImp("infoboxes", params);      
         GraphImp tGraph = new GraphImp("bench", params);
         
-        //System.out.println("Count:"+tGraph.count());
+        System.out.println("Count:"+tGraph.count());
         System.out.println("time: "+(System.currentTimeMillis()-time));time=System.currentTimeMillis();
-        
+/*        
         long idx=tGraph.subFileReader.getIdxLength()-1;
         System.out.println("idx:"+idx);
         
@@ -41,6 +41,7 @@ public class ReadTest {
         
         PositionData pdata=tGraph.subFileReader.findData("zz:vgrelease1:vgreleaseProperty", "zz:vgrelease1:vgreleaseProperty");
         System.out.println("get data: "+(System.currentTimeMillis()-time));time=System.currentTimeMillis();
+        
         
         //pdata=pdata.back();
         //System.out.println("pdata back:"+pdata);
@@ -59,24 +60,20 @@ public class ReadTest {
             System.out.println(x+":"+" pdata:"+pdata.getPosition()+" ->"+pdata.getText());
             pdata=pdata.back();
         }        
+        System.out.println("walk: "+(System.currentTimeMillis()-time));time=System.currentTimeMillis();
+*/        
         
+        TripleIterator it=tGraph.findTriples(new Triple("<http://dbpedia.org/resource/Giants_Stadium>","<http://dbpedia.org/property/architect>",null));
+        //TripleIterator it=tGraph.findTriples(new Triple("<http://dbpedia.org/resource/Giants_Stadium>",null,null));
+        while (it.hasNext()) {
+            Triple triple = it.next();
+            System.out.println("triple:"+triple);
+        }    
         
-////        Iterator<Triple> it = tGraph.read2("/data/bench/SWBAdmin.nt", 0, 0);
-////        while (it.hasNext()) {
-////            Triple triple = it.next();
-//            
-//            TripleIterator it2=tGraph.findTriples(new Triple("<http://www.semanticwb.org/SWBAdmin#Resource:3>",null,null));
-////            TripleIterator it2=tGraph.findTriples(new Triple("<http://www.semanticwb.org/SWBAdmin#Resource:3>","<http://www.semanticwebbuilder.org/swb4/ontology#views>","\"1310\"^^<http://www.w3.org/2001/XMLSchema#long>"));
-//            //TripleIterator it2=tGraph.findTriples(triple);
-//            while (it2.hasNext()) {
-//                Triple triple2 = it2.next();
-//                System.out.println("triple:"+triple2);
-//            }            
-////        }
+        System.out.println("find: "+(System.currentTimeMillis()-time));time=System.currentTimeMillis();
         
         //System.out.println("it:"+it);
         
-        System.out.println("walk: "+(System.currentTimeMillis()-time));time=System.currentTimeMillis();
         
         tGraph.close();
         

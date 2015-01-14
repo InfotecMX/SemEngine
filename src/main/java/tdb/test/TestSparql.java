@@ -2,9 +2,9 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package leveldb.test;
+package tdb.test;
 
-import flatstore.test.*;
+import com.hp.hpl.jena.query.Dataset;
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.QueryExecutionFactory;
@@ -15,12 +15,10 @@ import com.hp.hpl.jena.query.Syntax;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.impl.ModelCom;
+import com.hp.hpl.jena.tdb.TDBFactory;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Iterator;
-import org.semanticwb.store.jenaimp.SWBTSGraph;
-import org.semanticwb.store.jenaimp.SWBTSGraphCache;
-import org.semanticwb.store.leveldb.GraphImp;
+import org.semanticwb.store.jenaimp.SWBTSGraphDebug;
 
 /**
  *
@@ -28,35 +26,22 @@ import org.semanticwb.store.leveldb.GraphImp;
  */
 public class TestSparql
 {
+
     public static void main(String[] args) throws IOException
     {
         long time=System.currentTimeMillis();
         
-        HashMap<String,String> params=new HashMap();
-        params.put("path", "/data/flatstore/");
-        params.put("path", "/data/leveldb");
-
-        org.semanticwb.store.Graph graph = new GraphImp("swb", params);
-        //Model model=new ModelCom(new SWBTSGraphCache(new SWBTSGraph(graph),10000));
-        Model model=new ModelCom(new SWBTSGraph(graph));
-        //System.out.println("size:"+model.size());
+        String directory = "/data/tdb" ;
+        Dataset dataset = TDBFactory.createDataset(directory) ;
+        //Model model = dataset.getDefaultModel();
         
+        Model model=new ModelCom(new SWBTSGraphDebug(dataset.getDefaultModel().getGraph()));
+        
+        System.out.println("size:"+model.size());
+
         
         System.out.println("ini:"+(System.currentTimeMillis()-time));   
-        time=System.currentTimeMillis();       
-        
-        test(model);
-        //test(model);
-        
-        model.close();
-        
-        System.out.println("end:"+(System.currentTimeMillis()-time));   
-        time=System.currentTimeMillis();        
-    }
-
-    public static void test(Model model) throws IOException
-    {
-        long time=System.currentTimeMillis(); 
+        time=System.currentTimeMillis();
         
 //        System.out.println("size:" + model.size());
 //
@@ -78,7 +63,7 @@ public class TestSparql
         "  ?film2 p:starring ?actor1 .\n" +
         "  ?film2 p:starring ?actor2 .\n" +
         "}";        
-        query(query,model,false);        
+        query(query,model);        
         
         query="PREFIX p: <http://dbpedia.org/property/>\n" +
         "\n" +
@@ -91,7 +76,7 @@ public class TestSparql
         "  ?artwork p:museum ?museum .\n" +
         "  ?museum p:director ?director\n" +
         "}";        
-        query(query,model,false);  
+        query(query,model);  
         
         query="PREFIX geo: <http://www.w3.org/2003/01/geo/wgs84_pos#>\n" +
         "PREFIX foaf: <http://xmlns.com/foaf/0.1/>\n" +
@@ -130,6 +115,14 @@ public class TestSparql
         "     ?long       <=     ?nyLong + 0.8679199218)\n" +
         "}";        
         query(query,model,false);          
+        
+        model.close();
+        
+        dataset.close();
+        
+        System.out.println("end:"+(System.currentTimeMillis()-time));   
+        time=System.currentTimeMillis();
+
     }
     
     public static void query(String query, Model model)

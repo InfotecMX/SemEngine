@@ -1,9 +1,14 @@
 package org.semanticwb.store.flatstore;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import org.semanticwb.store.TripleWrapper;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import org.semanticwb.store.Graph;
 import org.semanticwb.store.Triple;
 
@@ -21,7 +26,12 @@ public class TripleFileReader {
     private final long length;
     private final long dataLength;
     private Long c_triples=null;
-    private final int FIND_SEC=10;
+    private final int FIND_SEC=50;
+    
+    public static final char SEPARATOR=0;
+    
+    private final int CACHE=10000;
+    private LoadingCache<String, PositionData> cache = null;    
 
     public TripleFileReader(String baseFilename, Graph graphReference, IdxBy ordering) throws IOException {
         this.baseFilename = baseFilename;
@@ -31,6 +41,26 @@ public class TripleFileReader {
         idx = new RandomAccessFile(this.baseFilename + ".idx", "r");
         this.length =idx.length();
         this.dataLength=data.length();
+        
+        final TripleFileReader _this=this;
+        
+        cache = CacheBuilder.newBuilder()
+                .maximumSize(CACHE)
+                .expireAfterAccess(5, TimeUnit.MINUTES)
+                .build(new CacheLoader<String, PositionData>()
+                {
+                    @Override
+                    public PositionData load(String key) throws IOException
+                    {
+                        IdxData idx=findGroup(key);
+                        if(idx==null)return null;
+
+                        long p=idx.getPosition();
+                        return new PositionData(_this, p);
+                    }
+                });
+        
+        
     }
     
     public synchronized IdxData getIdxData(long index) throws IOException {
@@ -57,20 +87,7 @@ public class TripleFileReader {
     protected byte[] getDataBlock(long position) throws IOException {
         return getData(position,getDataInt(position));
     }  
-    
-    public Triple[] getTripleGroup(long index) throws IOException 
-    {
-        IdxData idx=getIdxData(index);
-        Triple[] ret = new Triple[idx.getNumObjects()];
-        long currPosition = idx.getPosition();
-        for (int i = 0; i < idx.getNumObjects(); i++) {
-            byte[] buff = getDataBlock(currPosition);
-            ret[i] = getTripleFromData(buff);
-            currPosition += buff.length;
-        }
-        return ret;
-    }  
-    
+
     public String getGroup(long index) throws IOException
     {
         return getGroup(index, 0);
@@ -131,7 +148,7 @@ public class TripleFileReader {
     
     public IdxData findGroup(String group) throws IOException
     {
-        String groupIni=group+(char)0;
+        String groupIni=group+TripleFileReader.SEPARATOR;
         long index=0;
         long jump=size();
         
@@ -150,13 +167,21 @@ public class TripleFileReader {
         }
     }
     
-    public PositionData findData(String group, String match) throws IOException
+    public PositionData findData(String group, String match) throws IOException, ExecutionException
     {
-        IdxData idx=findGroup(group);
-        if(idx==null)return null;
-        
-        long p=idx.getPosition();
-        PositionData datap=new PositionData(this, p);
+        PositionData datap=null;
+        if(false)
+        {
+            if(group==null)return null;
+            datap=cache.get(group);
+        }else
+        {        
+            IdxData idx=findGroup(group);
+            if(idx==null)return null;
+
+            long p=idx.getPosition();
+            datap=new PositionData(this, p);
+        }
         
         while(datap!=null)
         {
@@ -214,12 +239,6 @@ public class TripleFileReader {
                     for (int i = 0; i < size; i++) {
                         IdxData data=getIdxData(i);
                         ret += data.getNumObjects();
-                        
-//                        System.out.println("g:"+getGroup(i));
-//                        long currPosition=data.getPosition();
-//                        byte[] buff = getDataBlock(currPosition);
-//                        Triple t = getTripleFromData(buff);
-//                        System.out.println("Triple:"+t);
                     }
                     c_triples=ret;
                 }
@@ -227,100 +246,11 @@ public class TripleFileReader {
         }
         return c_triples;
     }    
-    
-    
-    private Triple getTripleFromData(byte[] buff){
-        Triple ret =null;
-        switch (ordering) {
-            case SUBJECT: 
-                ret = TripleWrapper.getTripleFromDataBySubject(graphReference, buff);
-                break;
-            case PROPERTY: 
-                ret = TripleWrapper.getTripleFromDataByProperty(graphReference, buff);
-                break;
-            case OBJECT: 
-                ret = TripleWrapper.getTripleFromDataByObject(graphReference, buff);
-                break;
-        }
-        return ret;
-    } 
 
     public long getFileDataLength() {
         return dataLength;
     }
     
-    
-    
-    
-
-    
-/*    
-    private Triple getTripleAt(long position) throws IOException {
-        return getTripleFromData(getDataBlock(position));
-    }
-    
-    public Triple getNextTriple() throws IOException 
-    {
-        return getTripleFromData(getDataBlock(dataPosition));
-    }
-    
-    public Triple getPreviousTriple() throws IOException 
-    {
-        data.seek(dataPosition-4);
-        byte[] header = new byte[4];
-        data.read(header);
-        int size = ByteBuffer.wrap(header).getInt();
-        return getTripleFromData(getDataBlock(dataPosition));
-    }    
-    
-    public Triple findTriple(String str)
-    {
-        
-    }
-
-    private IdxData getIdxData(long idxPosition) throws IOException {
-        idx.seek(idxPosition);
-        byte[] idxData = new byte[12];
-        idx.read(idxData);
-        ByteBuffer bb = ByteBuffer.wrap(idxData);
-        return new IdxData(bb.getLong(), bb.getInt());
-    }
-
-    private IdxData getNextIdxData() throws IOException {
-        idxPosition += 12;
-        return getIdxData();
-    }
-    
-
-
-    private Triple[] getTripleGroup(IdxData idx) throws IOException {
-        Triple[] ret = new Triple[idx.getNumObjects()];
-        long currPosition = idx.getPosition();
-        for (int i = 0; i < idx.getNumObjects(); i++) {
-            byte[] buff = getDataBlock(currPosition);
-            ret[i] = getTripleFromData(buff);
-            currPosition += buff.length;
-        }
-        return ret;
-    }
-
-    private byte[] getDataBlock(long position) throws IOException {
-        data.seek(position);
-        byte[] header = new byte[4];
-        data.read(header);
-        int size = ByteBuffer.wrap(header).getInt();
-        byte[] buff = new byte[size];
-        data.seek(position);
-        data.read(buff);
-        return buff;
-    }
-
-    private String getGroupValue(long position) throws IOException {
-        byte[] buff = getDataBlock(position);
-        int subSize = ByteBuffer.wrap(buff).getInt(4);
-        return new String(buff, 16, subSize, "utf-8");
-    }
-*/
 
     public long getFileIdxLength() {
         return length;

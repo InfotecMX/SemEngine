@@ -265,22 +265,22 @@ public class GraphImp extends Graph {
         final String p = obj.p;
         final String o = obj.o;
         
-        String group=s;
+        String group=s+TripleFileReader.SEPARATOR;
         String txt="";
         
         if(s!=null)
         {
             ind=subFileReader;
-            group=s;
+            group=s+TripleFileReader.SEPARATOR;
             idx=0;
-            txt=s;
+            txt=s+TripleFileReader.SEPARATOR;
             if(p!=null)
             {
-                txt=txt+p;
+                txt=txt+p+TripleFileReader.SEPARATOR;
                 group=txt;
                 if(o!=null)
                 {
-                    txt=txt+o;
+                    txt=txt+o+TripleFileReader.SEPARATOR;
                     full=true;
                 }
             }else if(o!=null)
@@ -288,26 +288,26 @@ public class GraphImp extends Graph {
                 ind=objFileReader;
                 //group=o;
                 idx=2;
-                txt=o+s;
+                txt=o+TripleFileReader.SEPARATOR+s+TripleFileReader.SEPARATOR;
                 group=txt;
             }
         }else if(p!=null)
         {
             ind=propFileReader;
-            group=p;
+            group=p+TripleFileReader.SEPARATOR;
             idx=1;
-            txt=p;
+            txt=p+TripleFileReader.SEPARATOR;
             if(o!=null)
             {
-                txt=txt+o;
+                txt=txt+o+TripleFileReader.SEPARATOR;
                 group=txt;
             }
         }else if(o!=null)
         {
             ind=objFileReader;
-            group=o;
+            group=o+TripleFileReader.SEPARATOR;
             idx=2;
-            txt=o;
+            txt=o+TripleFileReader.SEPARATOR;
         }
         
         SObjectIterator ret=null;
@@ -320,7 +320,7 @@ public class GraphImp extends Graph {
                 final PositionData pd=ind.findData(group, txt);
                 if(pd.getText().startsWith(txt))val="found";
                 else val=null;
-            }catch(IOException e)
+            }catch(Exception e)
             {
                 throw new RuntimeException(e);
             }
@@ -373,7 +373,7 @@ public class GraphImp extends Graph {
             try
             {
                 pd=ind.findData(group, txt);
-            }catch(IOException e)
+            }catch(Exception e)
             {
                 throw new RuntimeException(e);
             }

@@ -38,21 +38,21 @@ public class PositionData
                 backLen=ByteBuffer.wrap(data,0,4).getInt();
                 nextLen=ByteBuffer.wrap(data,data.length-4,4).getInt();
                 str_off=16+4;
-                str_len=data_len-20-4-4;
+                str_len=data_len-20;
             }else if(position-4>0)
             {
                 data=reader.getData(position-4,data_len+4);
                 backLen=ByteBuffer.wrap(data,0,4).getInt();
                 nextLen=0;
                 str_off=16+4;
-                str_len=data_len-20-4;
+                str_len=data_len-20;
             }else
             {
                 data=reader.getData(position,data_len+4);
                 backLen=0;
                 nextLen=ByteBuffer.wrap(data,data.length-4,4).getInt();
                 str_off=16;
-                str_len=data_len-20-4;
+                str_len=data_len-20;
             }
         }
         else
@@ -121,9 +121,9 @@ public class PositionData
         int i1 = bb.getInt(4+off);
         int i2 = bb.getInt(8+off);
         int i3 = bb.getInt(12+off);
-        ret[0]=new String(data, 16+off, i1);
-        ret[1]=new String(data, 16+off+i1, i2);
-        ret[2]=new String(data, 16+off+i1+i2, i3);   
+        ret[0]=new String(data, 16+off, i1-1);
+        ret[1]=new String(data, 16+off+i1, i2-1);
+        ret[2]=new String(data, 16+off+i1+i2, i3-1);   
         return ret;
     }
     

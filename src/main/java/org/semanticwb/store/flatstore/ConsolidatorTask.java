@@ -83,9 +83,6 @@ public class ConsolidatorTask implements Runnable {
      }
      */
     private void processInternal(FileTripleExtractor[] archivos) {
-        
-        
-        
         FileTripleExtractor[] listaDatos = archivos;
         Arrays.sort(listaDatos, cmp);
         previous = listaDatos[0].getCurrentTriple().getGroup();
@@ -148,15 +145,20 @@ public class ConsolidatorTask implements Runnable {
         }
     }
 
+    FakeTriple last=null;
     private void save(FakeTriple ft) {
-        long triplePosition = saveTriple(ft);
-        if (!ft.getGroup().equals(previous)) {
-                idxList.add(new JumpFast(startPos, count));
-                previous = ft.getGroup();
-                count = 0;
-                startPos = triplePosition;
+        if(!ft.equals(last))
+        {
+            last=ft;
+            long triplePosition = saveTriple(ft);
+            if (!ft.getGroup().equals(previous)) {
+                    idxList.add(new JumpFast(startPos, count));
+                    previous = ft.getGroup();
+                    count = 0;
+                    startPos = triplePosition;
+            }
+            count++;
         }
-        count++;
     }
 
     private void saveIdx() {
