@@ -35,7 +35,8 @@ public class TestSparql
         params.put("path", "/data/flatstore/");
         
         //Model model=new ModelCom(new SWBTSGraphCache(new SWBTSGraph(new GraphImp("bench",params)),1000));
-        Model model=new ModelCom(new SWBTSGraphDebug(new SWBTSGraph(new GraphImp("bench",params))));
+        //Model model=new ModelCom(new SWBTSGraphDebug(new SWBTSGraph(new GraphImp("bench",params)),1000));
+        Model model=new ModelCom(new SWBTSGraph(new GraphImp("bench",params)));
         System.out.println("size:"+model.size());
         
         

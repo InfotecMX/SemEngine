@@ -1,15 +1,11 @@
 package flatstore.test;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
-import org.semanticwb.store.Graph;
 import org.semanticwb.store.Triple;
 import org.semanticwb.store.TripleIterator;
 import org.semanticwb.store.flatstore.GraphImp;
-import org.semanticwb.store.flatstore.PositionData;
 
 /**
  *

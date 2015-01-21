@@ -464,6 +464,11 @@ public abstract class Graph
 
     protected String encNode(Node node)
     {
+        if(node.getEncValue()!=null)
+        {
+            //System.out.println("reused:"+node);
+            return node.getEncValue();
+        }
         if(node.isResource())
         {
             return shortURI(node.asResource().getValue());
@@ -572,6 +577,7 @@ public abstract class Graph
         {
             ret=new Resource(expandUri(key));
         }
+        if(ret!=null)ret.setEncValue(key);
         //System.out.println("decode:"+key+"-->"+ret);
         return ret;
     }

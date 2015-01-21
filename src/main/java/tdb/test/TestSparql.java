@@ -35,9 +35,10 @@ public class TestSparql
         Dataset dataset = TDBFactory.createDataset(directory) ;
         //Model model = dataset.getDefaultModel();
         
-        Model model=new ModelCom(new SWBTSGraphDebug(dataset.getDefaultModel().getGraph()));
+        //Model model=new ModelCom(new SWBTSGraphDebug(dataset.getDefaultModel().getGraph()));
+        Model model=new ModelCom(dataset.getDefaultModel().getGraph());
         
-        System.out.println("size:"+model.size());
+        //System.out.println("size:"+model.size());
 
         
         System.out.println("ini:"+(System.currentTimeMillis()-time));   

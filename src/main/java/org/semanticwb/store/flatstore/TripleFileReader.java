@@ -30,7 +30,7 @@ public class TripleFileReader {
     
     public static final char SEPARATOR=0;
     
-    private final int CACHE=10000;
+    private final int CACHE=0;
     private LoadingCache<String, PositionData> cache = null;    
 
     public TripleFileReader(String baseFilename, Graph graphReference, IdxBy ordering) throws IOException {
@@ -44,21 +44,24 @@ public class TripleFileReader {
         
         final TripleFileReader _this=this;
         
-        cache = CacheBuilder.newBuilder()
-                .maximumSize(CACHE)
-                .expireAfterAccess(5, TimeUnit.MINUTES)
-                .build(new CacheLoader<String, PositionData>()
-                {
-                    @Override
-                    public PositionData load(String key) throws IOException
+        if(CACHE>0)
+        {
+            cache = CacheBuilder.newBuilder()
+                    .maximumSize(CACHE)
+                    .expireAfterAccess(10, TimeUnit.MINUTES)
+                    .build(new CacheLoader<String, PositionData>()
                     {
-                        IdxData idx=findGroup(key);
-                        if(idx==null)return null;
+                        @Override
+                        public PositionData load(String key) throws IOException
+                        {
+                            IdxData idx=findGroup(key);
+                            if(idx==null)return null;
 
-                        long p=idx.getPosition();
-                        return new PositionData(_this, p);
-                    }
-                });
+                            long p=idx.getPosition();
+                            return new PositionData(_this, p);
+                        }
+                    });
+        }
         
         
     }
@@ -170,7 +173,7 @@ public class TripleFileReader {
     public PositionData findData(String group, String match) throws IOException, ExecutionException
     {
         PositionData datap=null;
-        if(false)
+        if(CACHE>0)
         {
             if(group==null)return null;
             datap=cache.get(group);
