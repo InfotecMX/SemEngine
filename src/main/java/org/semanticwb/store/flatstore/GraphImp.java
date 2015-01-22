@@ -8,7 +8,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.ListIterator;
@@ -34,9 +33,9 @@ public class GraphImp extends Graph {
     private final int BLOCK_SIZE = 500_000;
     private ConcurrentHashMap<String, String> prefixMaps = new ConcurrentHashMap<>();
     private final File directory;
-    private final TripleFileReader subFileReader;
-    private final TripleFileReader propFileReader;
-    private final TripleFileReader objFileReader;
+    public final TripleFileReader subFileReader;
+    public final TripleFileReader propFileReader;
+    public final TripleFileReader objFileReader;
     private boolean isClosed = true;
     
     private Long t_size=null;
@@ -283,22 +282,22 @@ public class GraphImp extends Graph {
         final String p = obj.p;
         final String o = obj.o;
         
-        String group=s;
+        String group=s+TripleFileReader.SEPARATOR;
         String txt="";
         
         if(s!=null)
         {
             ind=subFileReader;
-            group=s;
+            group=s+TripleFileReader.SEPARATOR;
             idx=0;
-            txt=s;
+            txt=s+TripleFileReader.SEPARATOR;
             if(p!=null)
             {
-                txt=txt+p;
+                txt=txt+p+TripleFileReader.SEPARATOR;
                 group=txt;
                 if(o!=null)
                 {
-                    txt=txt+o;
+                    txt=txt+o+TripleFileReader.SEPARATOR;
                     full=true;
                 }
             }else if(o!=null)
@@ -306,26 +305,26 @@ public class GraphImp extends Graph {
                 ind=objFileReader;
                 //group=o;
                 idx=2;
-                txt=o+s;
+                txt=o+TripleFileReader.SEPARATOR+s+TripleFileReader.SEPARATOR;
                 group=txt;
             }
         }else if(p!=null)
         {
             ind=propFileReader;
-            group=p;
+            group=p+TripleFileReader.SEPARATOR;
             idx=1;
-            txt=p;
+            txt=p+TripleFileReader.SEPARATOR;
             if(o!=null)
             {
-                txt=txt+o;
+                txt=txt+o+TripleFileReader.SEPARATOR;
                 group=txt;
             }
         }else if(o!=null)
         {
             ind=objFileReader;
-            group=o;
+            group=o+TripleFileReader.SEPARATOR;
             idx=2;
-            txt=o;
+            txt=o+TripleFileReader.SEPARATOR;
         }
         
         SObjectIterator ret=null;
@@ -338,7 +337,7 @@ public class GraphImp extends Graph {
                 final PositionData pd=ind.findData(group, txt);
                 if(pd.getText().startsWith(txt))val="found";
                 else val=null;
-            }catch(IOException e)
+            }catch(Exception e)
             {
                 throw new RuntimeException(e);
             }
@@ -391,7 +390,7 @@ public class GraphImp extends Graph {
             try
             {
                 pd=ind.findData(group, txt);
-            }catch(IOException e)
+            }catch(Exception e)
             {
                 throw new RuntimeException(e);
             }
@@ -420,18 +419,11 @@ public class GraphImp extends Graph {
                     public SObject next()
                     {
                         SObject ret=null;
-                                
-                        ByteBuffer bb = ByteBuffer.wrap(act.getData());
-                        int i1 = bb.getInt(4);
-                        int i2 = bb.getInt(8);
-                        int i3 = bb.getInt(12);
-                        String s1=new String(act.getData(), 16, i1);
-                        String s2=new String(act.getData(), 16+i1, i2);
-                        String s3=new String(act.getData(), 16+i1+i2, i3);
-                        
-                        if(idxt==0)ret=new SObject(s1,s2,s3,"");
-                        if(idxt==1)ret=new SObject(s3,s1,s2,"");
-                        if(idxt==2)ret=new SObject(s2,s3,s1,"");
+                               
+                        String t[]=act.getTripleData();
+                        if(idxt==0)ret=new SObject(t[0],t[1],t[2],"");
+                        if(idxt==1)ret=new SObject(t[2],t[0],t[1],"");
+                        if(idxt==2)ret=new SObject(t[1],t[2],t[0],"");
                         
                         try
                         {

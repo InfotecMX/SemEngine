@@ -10,6 +10,8 @@ package org.semanticwb.store;
  */
 public class Node
 {
+    private String encvalue=null;
+    
     protected Node()
     {
         
@@ -70,10 +72,20 @@ public class Node
         return new Resource(ntstr);
     }
     
-    
     public String getValue()
     {
         return null;
     }    
+    
+    //TODO:cambiar a protected
+    public String getEncValue()
+    {
+        return encvalue;
+    }
+    
+    protected void setEncValue(String encvalue)
+    {
+        this.encvalue=encvalue;
+    }
     
 }

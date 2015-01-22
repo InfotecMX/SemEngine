@@ -4,6 +4,9 @@
  */
 package org.semanticwb.store.jenaimp;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.hp.hpl.jena.datatypes.BaseDatatype;
 import com.hp.hpl.jena.graph.Node;
 import com.hp.hpl.jena.graph.Triple;
@@ -13,6 +16,7 @@ import com.hp.hpl.jena.graph.impl.LiteralLabelFactory;
 import com.hp.hpl.jena.rdf.model.AnonId;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.concurrent.TimeUnit;
 
 /**
  *
@@ -20,12 +24,76 @@ import java.math.BigInteger;
  */
 public class SWBTSUtils
 {
+    private static final int CACHE=0;
+    private static LoadingCache<org.semanticwb.store.Node, Node> toJena = null;      
+    private static LoadingCache<Node, org.semanticwb.store.Node> toSWB = null;      
+    
+    static
+    {
+        if(CACHE>0)
+        {
+            toJena = CacheBuilder.newBuilder()
+                .maximumSize(CACHE)
+                .expireAfterAccess(10, TimeUnit.MINUTES)
+                .build(new CacheLoader<org.semanticwb.store.Node, Node>()
+                {
+                    @Override
+                    public Node load(org.semanticwb.store.Node key) 
+                    {
+                        Node node=_toJenaNode(key);
+                        toSWB.put(node, key);
+                        //System.out.println("toJena:"+key.getEncValue()+"-->"+node);
+                        return node;
+                    }
+                });
+
+            toSWB = CacheBuilder.newBuilder()
+                .maximumSize(CACHE)
+                //.expireAfterAccess(5, TimeUnit.MINUTES)
+                .build(new CacheLoader<Node,org.semanticwb.store.Node>()
+                {
+                    @Override
+                    public org.semanticwb.store.Node load(Node key) 
+                    {
+                        org.semanticwb.store.Node node=_toSWBNode(key);
+                        toJena.put(node, key);
+                        //System.out.println("toSWB:"+key+"-->"+node);
+                        return node;
+                    }
+                });  
+        }
+    }
+    
        /**
      * Regresa la representacion en String del nodo de RDF
      * @param node
      * @return
      */
     public static org.semanticwb.store.Node toSWBNode(Node node)//, StringBuilder comp)
+    {
+        if(node==null)return null;
+        try
+        {
+            if(CACHE>0)
+            {
+                return toSWB.get(node);
+            }else
+            {
+                return _toSWBNode(node);
+            }
+        }catch(Exception e)
+        {
+            throw new RuntimeException(e);
+        }
+    }    
+    
+    
+       /**
+     * Regresa la representacion en String del nodo de RDF
+     * @param node
+     * @return
+     */
+    public static org.semanticwb.store.Node _toSWBNode(Node node)//, StringBuilder comp)
     {
         if(node==null)return null;
         if(node.equals(Node.ANY))return null;
@@ -49,6 +117,24 @@ public class SWBTSUtils
     }
     
     public static Node toJenaNode(org.semanticwb.store.Node n)
+    {
+        if(n==null)return null;
+        try
+        {
+            if(CACHE>0)
+            {
+                return toJena.get(n);
+            }else
+            {
+                return _toJenaNode(n);
+            }
+        }catch(Exception e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+    
+    public static Node _toJenaNode(org.semanticwb.store.Node n)
     {
         //log.debug("string2Node:"+value+":"+ext);
         if(n==null)return null;

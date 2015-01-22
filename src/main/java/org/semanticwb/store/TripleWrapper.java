@@ -2,10 +2,8 @@ package org.semanticwb.store;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
-import org.semanticwb.store.Graph;
-import org.semanticwb.store.Triple;
 import org.semanticwb.store.flatstore.IdxBy;
-import org.semanticwb.store.flatstore.IdxBy;
+import org.semanticwb.store.flatstore.TripleFileReader;
 
 /**
  *
@@ -16,7 +14,6 @@ public class TripleWrapper {
     
     public int n1,n2,n3;
     
-    
     public TripleWrapper(Triple triple, Graph graph, IdxBy ind_type) {
         String s=graph.encNode(triple.getSubject());
         String p=graph.encNode(triple.getProperty());
@@ -24,26 +21,26 @@ public class TripleWrapper {
         switch (ind_type){
             case SUBJECT:
             {
-                data=s+p+o;
-                n1=s.length();
-                n2=p.length();
-                n3=o.length();
+                data=s+TripleFileReader.SEPARATOR+p+TripleFileReader.SEPARATOR+o+TripleFileReader.SEPARATOR;
+                n1=s.length()+1;
+                n2=p.length()+1;
+                n3=o.length()+1;
                 break;
             }
             case PROPERTY:
             {
-                data=p+o+s;
-                n3=s.length();
-                n1=p.length();
-                n2=o.length();
+                data=p+TripleFileReader.SEPARATOR+o+TripleFileReader.SEPARATOR+s+TripleFileReader.SEPARATOR;
+                n3=s.length()+1;
+                n1=p.length()+1;
+                n2=o.length()+1;
                 break;
             }
             case OBJECT:
             {
-                data=o+s+p;
-                n2=s.length();
-                n3=p.length();
-                n1=o.length();
+                data=o+TripleFileReader.SEPARATOR+s+TripleFileReader.SEPARATOR+p+TripleFileReader.SEPARATOR;
+                n2=s.length()+1;
+                n3=p.length()+1;
+                n1=o.length()+1;
             }
         }
     }

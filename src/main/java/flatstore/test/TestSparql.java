@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import org.semanticwb.store.flatstore.GraphImp;
 import org.semanticwb.store.jenaimp.SWBTSGraph;
+import org.semanticwb.store.jenaimp.SWBTSGraphDebug;
 
 /**
  *
@@ -26,7 +27,6 @@ import org.semanticwb.store.jenaimp.SWBTSGraph;
  */
 public class TestSparql
 {
-
     public static void main(String[] args) throws IOException
     {
         long time=System.currentTimeMillis();
@@ -34,10 +34,27 @@ public class TestSparql
         HashMap<String,String> params=new HashMap();
         params.put("path", "/data/flatstore/");
         
+        //Model model=new ModelCom(new SWBTSGraphCache(new SWBTSGraph(new GraphImp("bench",params)),1000));
+        //Model model=new ModelCom(new SWBTSGraphDebug(new SWBTSGraph(new GraphImp("bench",params)),1000));
         Model model=new ModelCom(new SWBTSGraph(new GraphImp("bench",params)));
+        System.out.println("size:"+model.size());
+        
         
         System.out.println("ini:"+(System.currentTimeMillis()-time));   
-        time=System.currentTimeMillis();
+        time=System.currentTimeMillis();       
+        
+        test(model);
+        //test(model);
+        
+        model.close();
+        
+        System.out.println("end:"+(System.currentTimeMillis()-time));   
+        time=System.currentTimeMillis();        
+    }
+
+    public static void test(Model model) throws IOException
+    {
+        long time=System.currentTimeMillis(); 
         
 //        System.out.println("size:" + model.size());
 //
@@ -52,27 +69,27 @@ public class TestSparql
         
         query="PREFIX p: <http://dbpedia.org/property/>\n" +
         "\n" +
-        "SELECT ?film1 ?actor1 ?film2 ?actor2\n" +
+        "SELECT *\n" +
         "WHERE {\n" +
         "  ?film1 p:starring <http://dbpedia.org/resource/Kevin_Bacon> .\n" +
         "  ?film1 p:starring ?actor1 .\n" +
         "  ?film2 p:starring ?actor1 .\n" +
         "  ?film2 p:starring ?actor2 .\n" +
         "}";        
-        query(query,model);        
+        query(query,model,false);        
         
         query="PREFIX p: <http://dbpedia.org/property/>\n" +
         "\n" +
         "SELECT ?artist " +
                   "?artwork " +
-//                "?museum " +
-//                "?director\n" +
+                "?museum " +
+                "?director\n" +
         "WHERE {\n" +
         "  ?artwork p:artist ?artist .\n" +
-//        "  ?artwork p:museum ?museum .\n" +
-//        "  ?museum p:director ?director\n" +
+        "  ?artwork p:museum ?museum .\n" +
+        "  ?museum p:director ?director\n" +
         "}";        
-        query(query,model);  
+        query(query,model,false);  
         
         query="PREFIX geo: <http://www.w3.org/2003/01/geo/wgs84_pos#>\n" +
         "PREFIX foaf: <http://xmlns.com/foaf/0.1/>\n" +
@@ -97,7 +114,7 @@ public class TestSparql
         "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n" +
         "PREFIX p: <http://dbpedia.org/property/>\n" +
         "\n" +
-        "SELECT ?s ?a ?homepage WHERE {\n" +
+        "SELECT * WHERE {\n" +
         "   <http://dbpedia.org/resource/New_York_City> geo:lat ?nyLat .\n" +
         "   <http://dbpedia.org/resource/New_York_City> geo:long ?nyLong . \n" +
         "   ?s geo:lat ?lat .\n" +

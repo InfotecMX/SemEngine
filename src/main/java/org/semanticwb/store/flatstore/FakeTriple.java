@@ -36,10 +36,14 @@ public class FakeTriple {
     public String getGroup() {
         return group;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj!=null && obj instanceof FakeTriple)
+        {
+            return this.data.equals(((FakeTriple)obj).data);
+        }
+        return false;
+    }
     
-    
-
-
-
-
 }
