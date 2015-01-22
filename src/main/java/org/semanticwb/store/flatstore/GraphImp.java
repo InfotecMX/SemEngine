@@ -94,9 +94,9 @@ public class GraphImp extends Graph {
     }
 
     public void createFromNT(String... ntFileName) throws IOException, InterruptedException {
-        int maxThreads = (Runtime.getRuntime().availableProcessors() /2) -1;
+        int maxThreads = (Runtime.getRuntime().availableProcessors() /2);
         if (maxThreads<1) maxThreads = 1; System.out.println("MaxThreads: "+ maxThreads);
-        int maxBlocks = ((int)((Runtime.getRuntime().maxMemory()/(1024*1024)) - 512)/150)-maxThreads;
+        int maxBlocks = ((int)((Runtime.getRuntime().maxMemory()/(1024*1024)) - 768)/200)-maxThreads;
         if (maxBlocks<1) maxBlocks=1; System.out.println("Memory: "+String.format("%,d", Runtime.getRuntime().maxMemory())+" "+maxBlocks);
         ExecutorService pool = Executors.newFixedThreadPool(maxThreads);
         Queue queue =((ThreadPoolExecutor)pool).getQueue();
