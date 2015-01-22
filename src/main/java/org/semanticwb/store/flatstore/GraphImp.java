@@ -9,15 +9,15 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import org.semanticwb.store.Graph;
 import org.semanticwb.store.SObject;
@@ -94,8 +94,12 @@ public class GraphImp extends Graph {
     }
 
     public void createFromNT(String... ntFileName) throws IOException, InterruptedException {
-        ExecutorService pool = Executors.newFixedThreadPool(4);
-        
+        int maxThreads = (Runtime.getRuntime().availableProcessors() /2) -1;
+        if (maxThreads<1) maxThreads = 1; System.out.println("MaxThreads: "+ maxThreads);
+        int maxBlocks = ((int)((Runtime.getRuntime().maxMemory()/(1024*1024)) - 512)/150)-maxThreads;
+        if (maxBlocks<1) maxBlocks=1; System.out.println("Memory: "+String.format("%,d", Runtime.getRuntime().maxMemory())+" "+maxBlocks);
+        ExecutorService pool = Executors.newFixedThreadPool(maxThreads);
+        Queue queue =((ThreadPoolExecutor)pool).getQueue();
         int count = 0;
         long triples = 0;
 //
@@ -122,18 +126,19 @@ public class GraphImp extends Graph {
             listaO.add(new TripleWrapper(it.next(), this, IdxBy.OBJECT));
             triples++;
             if (BLOCK_SIZE == listaS.size()) {
-                System.out.println("DataGathered "+(count+1)+":"+(System.currentTimeMillis()-time2sub));
+                System.out.println("DataGathered "+(count+1)+": "+(System.currentTimeMillis()-time2sub));
                 System.out.println("prefixes: "+prefixMaps.size());
-                System.out.println("f-Memory: "+Runtime.getRuntime().freeMemory());
-                while (WriterTask.intances > 1) {
-                    System.out.println("Waiting to submit job...");
+                System.out.println("f-Memory: "+String.format("%,d", Runtime.getRuntime().freeMemory()));
+                while (queue.size()>maxBlocks) { //WriterTask.intances > 1
+                    System.out.println("Waiting to submit job... "+queue.size());
                     Thread.sleep(500);
                 }
-                //System.out.println("Add Task");
+                System.out.println("Adding Task..."+queue.size()+" "+WriterTask.intances);
                 pool.submit(new WriterTask(getFilename(directory, this.getName(), ++count).getCanonicalPath(), listaS,listaP,listaO));
                 listaS = new ArrayList<>(BLOCK_SIZE);
                 listaP = new ArrayList<>(BLOCK_SIZE);
                 listaO = new ArrayList<>(BLOCK_SIZE);
+                System.out.println("Added Task..."+queue.size()+" "+WriterTask.intances);
                 time2sub=System.currentTimeMillis();
             }
         }
@@ -143,11 +148,11 @@ public class GraphImp extends Graph {
         }
         }
         System.out.println("Lectura y envío de trabajos: " + (System.currentTimeMillis() - lecturaStart));
-        System.out.println("triples: " + triples);
+        System.out.println("triples: " + String.format("%,d", triples));
         Thread.sleep(1000);
         pool.shutdown();
         while (!pool.awaitTermination(1, TimeUnit.SECONDS)) {
-            System.out.println("Waiting...");
+            System.out.println("Waiting for tasks to end...");
         }; //Necesitamos esperar a que los archivos parciales se hayan escrito
         System.out.println("Escritura paso 1: " + (System.currentTimeMillis() - lecturaStart));
 
@@ -162,13 +167,23 @@ public class GraphImp extends Graph {
         return new File(directory, graphName + "_" + sPart.substring(sPart.length() - 5));
     }
 
-    private void compact(int numberChunks, long triples) throws FileNotFoundException {
-        Thread compactor = new Thread(new ConsolidatorTask(numberChunks, getName(), directory, triples, IdxBy.SUBJECT));
-        compactor.start();
-        compactor = new Thread(new ConsolidatorTask(numberChunks, getName(), directory, triples, IdxBy.PROPERTY));
-        compactor.start();
-        compactor = new Thread(new ConsolidatorTask(numberChunks, getName(), directory, triples, IdxBy.OBJECT));
-        compactor.start();
+    private void compact(int numberChunks, long triples) throws FileNotFoundException, InterruptedException {
+        long time = System.currentTimeMillis();
+        ExecutorService pool = Executors.newFixedThreadPool(3);
+        pool.submit(new ConsolidatorTask(numberChunks, getName(), directory, triples, IdxBy.SUBJECT));
+        pool.submit(new ConsolidatorTask(numberChunks, getName(), directory, triples, IdxBy.PROPERTY));
+        pool.submit(new ConsolidatorTask(numberChunks, getName(), directory, triples, IdxBy.OBJECT));
+        pool.shutdown();
+        while (!pool.awaitTermination(30, TimeUnit.SECONDS)) {
+            System.out.println("Waiting for Compact to end...");
+        };
+        System.out.println("Compact face ended in "+(System.currentTimeMillis()-time));
+//        Thread compactor = new Thread(new ConsolidatorTask(numberChunks, getName(), directory, triples, IdxBy.SUBJECT));
+//        compactor.start();
+//        compactor = new Thread(new ConsolidatorTask(numberChunks, getName(), directory, triples, IdxBy.PROPERTY));
+//        compactor.start();
+//        compactor = new Thread(new ConsolidatorTask(numberChunks, getName(), directory, triples, IdxBy.OBJECT));
+//        compactor.start();
     }
 
     private void savePrefixes() throws IOException {
