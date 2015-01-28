@@ -12,13 +12,13 @@ public class FakeTriple {
     private final String data;
     private final String group;
 
-    public FakeTriple(byte[] bloq) {
+    public FakeTriple(byte[] bloq, boolean dual) {
         this.bloq = bloq;
         ByteBuffer bb = ByteBuffer.wrap(bloq);
         
         data = new String(bloq, 16, bloq.length-20);
         //group = new String(bloq, 16, bb.getInt(4));        
-        group = new String(bloq, 16, bb.getInt(4)+bb.getInt(8));
+        group = dual==true?new String(bloq, 16, bb.getInt(4)+bb.getInt(8)):new String(bloq, 16, bb.getInt(4));
         
 //        sizes[0] = bb.getInt(4);
 //        sizes[1] = bb.getInt(8);
@@ -35,6 +35,10 @@ public class FakeTriple {
 
     public String getGroup() {
         return group;
+    }
+    
+    public int getDataBlockSize() {
+        return bloq.length;
     }
 
     @Override

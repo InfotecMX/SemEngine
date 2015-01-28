@@ -19,9 +19,11 @@ public class FileTripleExtractor {
     private Iterator<FakeTriple> localIt;
     private long position = 0;
     private FakeTriple currentTriple = null;
+    private final boolean idx;
 
-    public FileTripleExtractor(String filename) {
+    public FileTripleExtractor(String filename, IdxBy idx) {
         this.filename = filename;
+        this.idx = idx.equals(IdxBy.PROPERTY)?true:false;
         try {
             inFile = new BufferedInputStream(new FileInputStream(this.filename));
             if (!inFile.markSupported()) {
@@ -60,7 +62,7 @@ public class FileTripleExtractor {
         if (-1 == rb) {
             return null;
         }
-        return new FakeTriple(data);
+        return new FakeTriple(data, idx);
     }
 
     public void close() {

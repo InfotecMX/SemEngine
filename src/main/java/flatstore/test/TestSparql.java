@@ -49,7 +49,7 @@ public class TestSparql
         model.close();
         
         System.out.println("end:"+(System.currentTimeMillis()-time));   
-        time=System.currentTimeMillis();        
+        time=System.currentTimeMillis();    
     }
 
     public static void test(Model model) throws IOException

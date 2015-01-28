@@ -1,6 +1,7 @@
 package org.semanticwb.store.flatstore;
 
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.function.Function;
 import static java.util.stream.Collectors.toList;
 import java.util.stream.IntStream;
+import java.util.zip.GZIPOutputStream;
 
 /**
  *
@@ -26,8 +28,10 @@ public class ConsolidatorTask implements Runnable {
     private final File directory;
     private final long triples;
     private final RandomAccessFile dataFile;
+    private final RandomAccessFile compressDataFile;
     private final List<JumpFast> idxList = new ArrayList<>();
     private String previous = null;
+    private List<FakeTriple> currentList = new ArrayList<>();
     private long startPos = 0;
     private int count = 0;
     private final IdxBy idx;
@@ -44,6 +48,7 @@ public class ConsolidatorTask implements Runnable {
         this.directory = directory;
         this.triples = triples;
         this.dataFile = new RandomAccessFile(new File(directory, name + getSufix() + ".swbdb"), "rw");
+        this.compressDataFile = new RandomAccessFile(new File(directory, name + getSufix() + ".swbdbC"), "rw");
     }
 
     @Override
@@ -51,7 +56,7 @@ public class ConsolidatorTask implements Runnable {
         long sortTime = System.currentTimeMillis();
         List<FileTripleExtractor> archivos = IntStream.rangeClosed(1, numberChunks)
                 .mapToObj(index
-                        -> new FileTripleExtractor(getFilename(index)))
+                        -> new FileTripleExtractor(getFilename(index), idx))
                 .collect(toList());
 //            processJDK(archivos);
         processInternal(archivos.toArray(new FileTripleExtractor[0]));
@@ -152,12 +157,40 @@ public class ConsolidatorTask implements Runnable {
             last=ft;
             long triplePosition = saveTriple(ft);
             if (!ft.getGroup().equals(previous)) {
+                long blockPosition = saveTripleBlock(currentList);
+                currentList = new ArrayList<>();
                     idxList.add(new JumpFast(startPos, count));
                     previous = ft.getGroup();
                     count = 0;
                     startPos = triplePosition;
             }
+            currentList.add(ft);
             count++;
+        }
+    }
+    
+    private long saveTripleBlock(List<FakeTriple> list){
+        try {
+            long position = compressDataFile.length();
+            compressDataFile.seek(position);
+            compressDataFile.write(getBytesFromList(list));
+            return position;
+        } catch (IOException ioe) {
+            throw new RuntimeException("Writing to compressDataFile.", ioe);
+        }
+    }
+    
+    private byte[] getBytesFromList(List<FakeTriple> list) throws IOException {
+        int size = list.stream().mapToInt(FakeTriple::getDataBlockSize).sum();
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream(size); 
+                GZIPOutputStream gzo = new GZIPOutputStream(baos)){
+            for (FakeTriple ft: list){
+                gzo.write(ft.getDataBlock());
+            }
+            gzo.finish();
+            byte[]ret =  baos.toByteArray();
+            //System.out.println("sizes: "+size+" "+ret.length);
+            return ret;
         }
     }
 
